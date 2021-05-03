@@ -88,8 +88,6 @@ NTSTATUS hookSyscall(PIRP Irp)
             pUsermodeBuffer = static_cast<PINPUT_BUFFER>(
                 Irp->AssociatedIrp.SystemBuffer
                 );
-
-            DbgPrint("[%ws::%d] Syscall: %d\n", __FUNCTIONW__, __LINE__, pUsermodeBuffer->syscall);
         }
         __except (EXCEPTION_EXECUTE_HANDLER)
         {
@@ -269,8 +267,6 @@ NTSTATUS isSyscallHooked(PIRP Irp, PULONG Information)
             pUsermodeBuffer = static_cast<PINPUT_BUFFER>(
                 Irp->AssociatedIrp.SystemBuffer
                 );
-
-            DbgPrint("[%ws::%d] Syscall: %d\n", __FUNCTIONW__, __LINE__, pUsermodeBuffer->syscall);
         }
         __except (EXCEPTION_EXECUTE_HANDLER)
         {
@@ -295,12 +291,7 @@ NTSTATUS isSyscallHooked(PIRP Irp, PULONG Information)
         return STATUS_INVALID_PARAMETER;
     }
 
-    DbgPrint("Status: %d\n", pUsermodeBuffer->status);
-
     pUsermodeBuffer->status = hook::isFunctionHookedByIndex(pUsermodeBuffer->syscall);
-
-    DbgPrint("Status: %d\n", pUsermodeBuffer->status);
-
     __try
     {
         RtlCopyMemory(
@@ -332,8 +323,6 @@ NTSTATUS unhookSyscall(PIRP Irp)
             pUsermodeBuffer = static_cast<PINPUT_BUFFER>(
                 Irp->AssociatedIrp.SystemBuffer
                 );
-
-            DbgPrint("[%ws::%d] Syscall: %d\n", __FUNCTIONW__, __LINE__, pUsermodeBuffer->syscall);
         }
         __except (EXCEPTION_EXECUTE_HANDLER)
         {
@@ -357,7 +346,6 @@ NTSTATUS unhookSyscall(PIRP Irp)
         DbgPrint("[%ws::%d] %d is not a valid index.\n", __FUNCTIONW__, __LINE__, pUsermodeBuffer->syscall);
         return STATUS_INVALID_PARAMETER;
     }
-    DbgPrint("[%ws::%d] unhooking with function id: %d\n", __FUNCTIONW__, __LINE__, pUsermodeBuffer->syscall);
 
     return hook::unhookFunction(pUsermodeBuffer->syscall);
 }

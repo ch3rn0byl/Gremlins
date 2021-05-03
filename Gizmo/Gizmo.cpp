@@ -27,7 +27,7 @@ wchar_t* what()
 	return lpwMessageBuffer;
 }
 
-bool ResolveSyscall(LPCSTR lpProcName, uint16_t* ui8SyscallValue)
+bool ResolveSyscall(LPCSTR lpProcName, PUINT16 ui16SyscallValue)
 {
 	HMODULE hModule = GetModuleHandle(L"ntdll.dll");
 	if (hModule == NULL)
@@ -59,7 +59,7 @@ bool ResolveSyscall(LPCSTR lpProcName, uint16_t* ui8SyscallValue)
 
 	if (RtlCompareMemory(fpProcName, SyscallSig, sizeof(SyscallSig)) == sizeof(SyscallSig))
 	{
-		*ui8SyscallValue = *reinterpret_cast<uint8_t*>(
+		*ui16SyscallValue = *reinterpret_cast<uint8_t*>(
 			reinterpret_cast<uint64_t>(fpProcName) + sizeof(SyscallSig)
 			);
 
