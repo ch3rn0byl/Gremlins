@@ -19,6 +19,7 @@ class SlaveNetworkClient
 		BOOL ConnectToController();
 		BOOL ReceiveFromController();
 		BOOL ControllerHasMessage(PVOID* pBuffer, DWORD* dwBufferLen);
+		BOOL SendToController(PVOID pBuffer, DWORD dwBufferLen);
 		BOOL FlushControllerBuffer();
 
 	private:

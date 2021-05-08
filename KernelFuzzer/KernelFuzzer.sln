@@ -9,8 +9,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SlaveClient", "SlaveClient\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RemoteClient", "RemoteClient\RemoteClient.vcxproj", "{A2E3C7BA-B649-49C1-92D3-1003D27C4EB8}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FuzzEngine", "FuzzEngine\FuzzEngine.vcxproj", "{C3B5D851-836A-4286-BF4C-DECD0CD9AADC}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -43,14 +41,6 @@ Global
 		{A2E3C7BA-B649-49C1-92D3-1003D27C4EB8}.Release|x64.Build.0 = Release|x64
 		{A2E3C7BA-B649-49C1-92D3-1003D27C4EB8}.Release|x86.ActiveCfg = Release|Win32
 		{A2E3C7BA-B649-49C1-92D3-1003D27C4EB8}.Release|x86.Build.0 = Release|Win32
-		{C3B5D851-836A-4286-BF4C-DECD0CD9AADC}.Debug|x64.ActiveCfg = Debug|x64
-		{C3B5D851-836A-4286-BF4C-DECD0CD9AADC}.Debug|x64.Build.0 = Debug|x64
-		{C3B5D851-836A-4286-BF4C-DECD0CD9AADC}.Debug|x86.ActiveCfg = Debug|Win32
-		{C3B5D851-836A-4286-BF4C-DECD0CD9AADC}.Debug|x86.Build.0 = Debug|Win32
-		{C3B5D851-836A-4286-BF4C-DECD0CD9AADC}.Release|x64.ActiveCfg = Release|x64
-		{C3B5D851-836A-4286-BF4C-DECD0CD9AADC}.Release|x64.Build.0 = Release|x64
-		{C3B5D851-836A-4286-BF4C-DECD0CD9AADC}.Release|x86.ActiveCfg = Release|Win32
-		{C3B5D851-836A-4286-BF4C-DECD0CD9AADC}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

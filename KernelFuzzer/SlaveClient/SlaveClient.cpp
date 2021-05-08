@@ -14,7 +14,9 @@ void SlaveClient::Startup(std::string szArguments)
 	pSlaveConfig = (SlaveConfig*)HeapAlloc(GetProcessHeap(), 0, sizeof(SlaveConfig));
 	pSlaveConfig->szControllerPort = new std::string(szPortNumber);
 
-	pNetworkClient = (SlaveNetworkClient*)HeapAlloc(GetProcessHeap(), 0, sizeof(SlaveNetworkClient));
+	pNetworkClient = new SlaveNetworkClient;
+
+	pFuzzEngine = new FuzzEngine;
 }
 
 void SlaveClient::Mainloop()
@@ -26,25 +28,24 @@ void SlaveClient::Mainloop()
 
 	pNetworkClient->ConnectToController();
 
-	pNetworkClient->ReceiveFromController();
-
 	while (1)
 	{
 		pNetworkClient->ReceiveFromController();
 
 		if (TRUE == pNetworkClient->ControllerHasMessage(&pControllerMessage, &dwControllerMessageLength))
 		{
-
 			TranslateMessage(pControllerMessage, dwControllerMessageLength);
 
-			// PLACEHOLDER
 			pNetworkClient->FlushControllerBuffer();
 		}
+
+		SendMutationToController();
 	}
 }
 
 BOOL SlaveClient::TranslateMessage(PVOID pReceiveBuffer, DWORD dwReceiveBufferLen)
 {
+	DWORD dwDataLen = 0;
 	BOOL bReturnValue = TRUE;
 	CHAR cMessageType;
 
@@ -58,10 +59,45 @@ BOOL SlaveClient::TranslateMessage(PVOID pReceiveBuffer, DWORD dwReceiveBufferLe
 	switch (cMessageType)
 	{
 		case MESSAGE_NEW_SEED:
+			pFuzzEngine->SetSeed((CHAR*)pReceiveBuffer + 1, dwReceiveBufferLen - 1);
 			DevInfo("Received new seed request from controller.");
 			break;
 	}
 
 	end:
+	return bReturnValue;
+}
+
+BOOL SlaveClient::SendMutationToController()
+{
+	BOOL bReturnValue = TRUE;
+	SlaveClient* scSlaveClient = NULL;
+	CHAR* pBuffer2 = NULL;
+	PVOID pMutationBuffer = NULL;
+	DWORD dwMutationBuffer = 0;
+	int i = 0;
+
+	if (FALSE == pFuzzEngine->HasSeed())
+	{
+		bReturnValue = FALSE;
+		goto end;
+	}
+
+	pFuzzEngine->SetChaos(10);
+
+	pFuzzEngine->Mutate();
+
+	pFuzzEngine->GetMutation(&pMutationBuffer, &dwMutationBuffer);
+
+	pBuffer2 = (CHAR * )HeapAlloc(GetProcessHeap(), 0, dwMutationBuffer + 1);
+	memcpy(pBuffer2 + 1, pMutationBuffer, dwMutationBuffer);
+
+	((char*)pBuffer2)[0] = MESSAGE_NEW_INPUT;
+
+	bReturnValue = pNetworkClient->SendToController(pBuffer2, dwMutationBuffer + 1);
+
+	HeapFree(GetProcessHeap(), 0, pBuffer2);
+
+end:
 	return bReturnValue;
 }

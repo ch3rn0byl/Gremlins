@@ -71,6 +71,8 @@ void ControllerClient::Mainloop()
 	DWORD dwSlaveCursor = 0;
 	DWORD dwSlaveMessageLength = 0;
 	PVOID dwSlaveMessage = NULL;
+	DWORD dwTotalSeconds = 0;
+	DWORD dwSlaveCount = 0;
 
 	pControllerConfig->szRemoteIP = new std::string();
 	while (0 == pControllerConfig->szRemoteIP->size())
@@ -113,20 +115,21 @@ void ControllerClient::Mainloop()
 	for (dwSlaveCursor = 0; dwSlaveCursor < std::stoi(*pControllerConfig->szProcessorCount); dwSlaveCursor++)
 	{
 		SendSeedToSlave(dwSlaveCursor, (PVOID)"NEWSEED", 7);
-		SendSeedToSlave(dwSlaveCursor, (PVOID)"NEWSEED", 7);
 	}
+
+	dwSlaveCount = std::stoi(*pControllerConfig->szProcessorCount);
 
 	tpBegin = std::chrono::steady_clock::now();
 	while (true)
 	{
-		for (dwSlaveCursor = 0; dwSlaveCursor < std::stoi(*pControllerConfig->szProcessorCount); dwSlaveCursor++)
+		for (dwSlaveCursor = 0; dwSlaveCursor < dwSlaveCount; dwSlaveCursor++)
 		{
 			pNetworkClient->ReceiveFromSlave(dwSlaveCursor);
 
 			if (TRUE == pNetworkClient->SlaveHasMessage(dwSlaveCursor, &dwSlaveMessage, &dwSlaveMessageLength))
 			{
-				DevInfo("Received messaged from controller.");
-
+				TranslateMessage(dwSlaveCursor, dwSlaveMessage, dwSlaveMessageLength);
+				
 				// PLACEHOLDER
 				pNetworkClient->FlushSlaveBuffer(dwSlaveCursor);
 			}
@@ -138,9 +141,15 @@ void ControllerClient::Mainloop()
 		tpSeconds = tpEnd - tpBegin;
 		if (tpSeconds.count() > 1)
 		{
+			dwTotalSeconds++;
+
 			tpBegin = std::chrono::steady_clock::now();
 			dwCycles = 0;
+			printf("[*] Num inputs submitted from slaves: %d (%f/sec)\t\t\t\t\t\t\t\r", 
+				dwNumInputsSubmitted, (float)dwNumInputsSubmitted / (float)dwTotalSeconds);
+
 		}
+
 	}
 
 	end:
@@ -185,3 +194,25 @@ BOOL ControllerClient::SendSeedToSlave(DWORD dwSlaveId, PVOID pBuffer, DWORD dwB
 	return bReturnValue;
 }
 
+BOOL ControllerClient::TranslateMessage(DWORD dwSlaveId, PVOID pReceiveBuffer, DWORD dwReceiveBufferLen)
+{
+	BOOL bReturnValue = TRUE;
+	CHAR cMessageType;
+
+	if (NULL == pReceiveBuffer || 0 == dwReceiveBufferLen)
+	{
+		bReturnValue = FALSE;
+		goto end;
+	}
+
+	cMessageType = ((char*)pReceiveBuffer)[0];
+	switch (cMessageType)
+	{
+		case MESSAGE_NEW_INPUT:
+			dwNumInputsSubmitted++;
+			break;
+	}
+
+end:
+	return bReturnValue;
+}

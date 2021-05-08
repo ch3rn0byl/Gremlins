@@ -36,6 +36,7 @@ class NetworkClient
 		BOOL SlaveHasMessage(DWORD dwSlaveId, PVOID* pBuffer, DWORD* dwBufferLen);
 		BOOL FlushSlaveBuffer(DWORD dwSlaveId);
 		BOOL SendToSlave(DWORD dwSlaveId, PVOID pBuffer, DWORD dwBufferLen);
+		BOOL RemoveSlave(DWORD dwSlaveId);
 
 	private:
 		DWORD dwNumConnections;

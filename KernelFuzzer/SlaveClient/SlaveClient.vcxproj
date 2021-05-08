@@ -140,6 +140,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="ArgumentParser.h" />
+    <ClInclude Include="FuzzEngine.h" />
     <ClInclude Include="Helpers.h" />
     <ClInclude Include="SlaveClient.h" />
     <ClInclude Include="SlaveNetworkClient.h" />
@@ -147,6 +148,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ArgumentParser.cpp" />
+    <ClCompile Include="FuzzEngine.cpp" />
     <ClCompile Include="Helpers.cpp" />
     <ClCompile Include="SlaveClient.cpp" />
     <ClCompile Include="SlaveNetworkClient.cpp" />

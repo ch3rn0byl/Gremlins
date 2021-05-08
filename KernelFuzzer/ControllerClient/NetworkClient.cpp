@@ -57,15 +57,35 @@ BOOL NetworkClient::Setup(ControllerConfig* pControllerConfig)
 	pTarget->hSocket = socket(aiTargetResult->ai_family, 
 		                      aiTargetResult->ai_socktype, 
 		                      aiTargetResult->ai_protocol);
+	if (SOCKET_ERROR == pTarget->hSocket)
+	{
+		bReturnValue = FALSE;
+		goto end;
+	}
 
 	pTarget->pSockAddress = aiTargetResult;
 
 	hListenSocket = socket(aiListenResult->ai_family, 
 		                   aiListenResult->ai_socktype, 
 		                   aiListenResult->ai_protocol);
+	if (SOCKET_ERROR == hListenSocket)
+	{
+		bReturnValue = FALSE;
+		goto end;
+	}
 
 	iReturnValue = bind(hListenSocket, aiListenResult->ai_addr, aiListenResult->ai_addrlen);
+	if (SOCKET_ERROR == iReturnValue)
+	{
+		bReturnValue = FALSE;
+		goto end;
+	}
+	
 	iReturnValue = listen(hListenSocket, SOMAXCONN);
+	if (SOCKET_ERROR == iReturnValue)
+	{
+		bReturnValue = FALSE;
+	}
 
 	end:
 	return bReturnValue;
@@ -140,6 +160,7 @@ BOOL NetworkClient::ReceiveFromSlave(DWORD dwSlaveId)
 	SlaveClient* scSlaveClient = NULL;
 	DWORD dwMaxLen = 8096;
 	DWORD dwRecvLen = 0;
+	INT iWSAError = 0;
 
 	if (dwSlaveId > dwNumConnections - 1)
 	{
@@ -155,11 +176,35 @@ BOOL NetworkClient::ReceiveFromSlave(DWORD dwSlaveId)
 		goto end;
 	}
 
-	dwRecvLen = recv(scSlaveClient->hSocket, (char*)scSlaveClient->pBuffer, 8096, 0);
-	if (SOCKET_ERROR == dwRecvLen)
+	if (INVALID_SOCKET == scSlaveClient->hSocket)
 	{
 		bReturnValue = FALSE;
 		goto end;
+	}
+
+	dwRecvLen = recv(scSlaveClient->hSocket, (char*)scSlaveClient->pBuffer, 8096, 0);
+	if (SOCKET_ERROR == dwRecvLen)
+	{
+
+		iWSAError = WSAGetLastError();
+		if (WSAESHUTDOWN == iWSAError || WSAECONNRESET == iWSAError)
+		{
+			bReturnValue = RemoveSlave(dwSlaveId);
+			if (FALSE == bReturnValue)
+			{
+				goto end;
+			}
+		}
+		
+		if (WSAEWOULDBLOCK == iWSAError)
+		{
+			dwRecvLen = 0;
+		}
+		else
+		{
+			bReturnValue = FALSE;
+			goto end;
+		}
 	}
 
 	scSlaveClient->dwBufferLen = dwRecvLen;
@@ -186,6 +231,12 @@ BOOL NetworkClient::SlaveHasMessage(DWORD dwSlaveId, PVOID* pBuffer, DWORD* dwBu
 	}
 
 	scSlaveClient = rgpSlaves[dwSlaveId];
+
+	if (INVALID_SOCKET == scSlaveClient->hSocket)
+	{
+		bReturnValue = FALSE;
+		goto end;
+	}
 
 	if (scSlaveClient->dwBufferLen == 0)
 	{
@@ -214,6 +265,12 @@ BOOL NetworkClient::FlushSlaveBuffer(DWORD dwSlaveId)
 
 	scSlaveClient = rgpSlaves[dwSlaveId];
 
+	if (INVALID_SOCKET == scSlaveClient->hSocket)
+	{
+		bReturnValue = FALSE;
+		goto end;
+	}
+
 	scSlaveClient->dwBufferLen = 0;
 	RtlSecureZeroMemory(scSlaveClient->pBuffer, 8096);
 
@@ -225,6 +282,7 @@ BOOL NetworkClient::SendToSlave(DWORD dwSlaveId, PVOID pBuffer, DWORD dwBufferLe
 {
 	BOOL bReturnValue = TRUE;
 	SlaveClient* scSlaveClient = NULL;
+	INT iReturnValue = 0;
 
 	if (dwSlaveId > dwNumConnections - 1)
 	{
@@ -234,8 +292,51 @@ BOOL NetworkClient::SendToSlave(DWORD dwSlaveId, PVOID pBuffer, DWORD dwBufferLe
 
 	scSlaveClient = rgpSlaves[dwSlaveId];
 
-	send(scSlaveClient->hSocket, (char*)pBuffer, dwBufferLen, 0);
+	if (INVALID_SOCKET == scSlaveClient->hSocket)
+	{
+		bReturnValue = FALSE;
+		goto end;
+	}
+
+	iReturnValue = send(scSlaveClient->hSocket, (char*)pBuffer, dwBufferLen, 0);
+	if (SOCKET_ERROR == iReturnValue)
+	{
+		bReturnValue = FALSE;
+	}
 
 	end:
+	return bReturnValue;
+}
+
+BOOL NetworkClient::RemoveSlave(DWORD dwSlaveId)
+{
+	BOOL bReturnValue = TRUE;
+	SlaveClient* scSlaveClient = NULL;
+	INT iReturnValue = 0;
+
+	if (dwSlaveId > dwNumConnections - 1)
+	{
+		bReturnValue = FALSE;
+		goto end;
+	}
+
+	scSlaveClient = rgpSlaves[dwSlaveId];
+
+	if (INVALID_SOCKET == scSlaveClient->hSocket)
+	{
+		bReturnValue = FALSE;
+		goto end;
+	}
+
+	DevInfo("Received notification that slave #%d is closing!", dwSlaveId);
+
+	closesocket(scSlaveClient->hSocket);
+	scSlaveClient->hSocket = INVALID_SOCKET;
+
+	HeapFree(GetProcessHeap(), 0, scSlaveClient->pBuffer);
+	scSlaveClient->pBuffer = NULL;
+	scSlaveClient->dwBufferLen = 0;
+
+end:
 	return bReturnValue;
 }
