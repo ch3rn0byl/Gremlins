@@ -1,6 +1,7 @@
 #include "ntcreatefile.h"
 
-NTSTATUS NtCF(
+_Use_decl_annotations_
+NTSTATUS fn_hNtCreateFile(
     PHANDLE FileHandle,
     ACCESS_MASK DesiredAccess,
     POBJECT_ATTRIBUTES ObjectAttributes,
@@ -18,28 +19,12 @@ NTSTATUS NtCF(
 
     if (kmPreviousMode == UserMode)
     {
-        PEPROCESS_WINDBG Process = reinterpret_cast<PEPROCESS_WINDBG>(PsGetCurrentProcess());
-
-        ExAcquireFastMutex(&g_Globals->fMutex);
-        DbgPrint("=============================================================================\n");
-        DbgPrint("[%ws::%ws::%d] %wZ is reaching to %wZ\n", __TITLE__, __FUNCTIONW__, __LINE__, Process->Peb->ProcessParameters->ImagePathName, ObjectAttributes->ObjectName);
-        DbgPrint("[%ws::%ws::%d] EaBuffer: %p\n", __TITLE__, __FUNCTIONW__, __LINE__, EaBuffer);
-        DbgPrint("[%ws::%ws::%d] EaLength: %d\n", __TITLE__, __FUNCTIONW__, __LINE__, EaLength);
-
-        if (EaBuffer && EaLength > 0)
-        {
-            for (unsigned int i = 0; i < EaLength; i++)
-            {
-                DbgPrint("%02x ", *(PUINT8)((PUCHAR)EaBuffer + i));
-            }
-            DbgPrint("\n");
-        }
-       
-        DbgPrint("=============================================================================\n");
-        ExReleaseFastMutex(&g_Globals->fMutex);
+        //
+        // Implement logic to suit your needs.
+        //
     }
-
-    return g_Globals->sub.IopCreateFile(
+    
+    return g_Globals->internal.IopCreateFile(
         FileHandle,
         DesiredAccess,
         ObjectAttributes,

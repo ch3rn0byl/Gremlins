@@ -17,26 +17,32 @@
       <UniqueIdentifier>{8E41214B-6785-4CFE-B992-037D68949A14}</UniqueIdentifier>
       <Extensions>inf;inv;inx;mof;mc;</Extensions>
     </Filter>
-    <Filter Include="Header Files\namespaces">
-      <UniqueIdentifier>{b1193764-5644-4732-9ca3-3335b067c6fa}</UniqueIdentifier>
+    <Filter Include="Source Files\Classes">
+      <UniqueIdentifier>{38aeb4cd-7829-43f4-9406-ee59599222ca}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\hooks">
-      <UniqueIdentifier>{64d452a2-bca4-4440-8fd3-2241c914b02c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\types">
-      <UniqueIdentifier>{cd58dbc7-826c-4357-a9f6-584fdf1c946f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\namespaces">
+    <Filter Include="Source Files\Namespaces">
       <UniqueIdentifier>{da800bce-0a49-4306-896e-3bcd5c1deb5c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\hooks">
-      <UniqueIdentifier>{d205988e-6a91-4324-91dc-221a5217ecfd}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\main driver functions">
+    <Filter Include="Source Files\Main driver functions">
       <UniqueIdentifier>{59600a13-debb-434a-83d9-bdcd1953357b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\main driver functions">
+    <Filter Include="Source Files\Hooks">
+      <UniqueIdentifier>{d205988e-6a91-4324-91dc-221a5217ecfd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Hooks">
+      <UniqueIdentifier>{64d452a2-bca4-4440-8fd3-2241c914b02c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Main driver functions">
       <UniqueIdentifier>{f53b6688-00dc-4e66-8a0a-01fa8f528256}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Namespaces">
+      <UniqueIdentifier>{b1193764-5644-4732-9ca3-3335b067c6fa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Types">
+      <UniqueIdentifier>{cd58dbc7-826c-4357-a9f6-584fdf1c946f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Classes">
+      <UniqueIdentifier>{0513ec47-cd02-4f4b-a987-cb71fcd11f1d}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -46,51 +52,81 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="detour.cpp">
-      <Filter>Source Files\namespaces</Filter>
+      <Filter>Source Files\Namespaces</Filter>
     </ClCompile>
     <ClCompile Include="resolve.cpp">
-      <Filter>Source Files\namespaces</Filter>
+      <Filter>Source Files\Namespaces</Filter>
     </ClCompile>
     <ClCompile Include="ntcreatefile.cpp">
-      <Filter>Source Files\hooks</Filter>
+      <Filter>Source Files\Hooks</Filter>
     </ClCompile>
     <ClCompile Include="ntdeviceiocontrolfile.cpp">
-      <Filter>Source Files\hooks</Filter>
+      <Filter>Source Files\Hooks</Filter>
     </ClCompile>
     <ClCompile Include="dispatchfunctions.cpp">
-      <Filter>Source Files\main driver functions</Filter>
+      <Filter>Source Files\Main driver functions</Filter>
     </ClCompile>
     <ClCompile Include="Source.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="hook.cpp">
-      <Filter>Source Files\namespaces</Filter>
+      <Filter>Source Files\Namespaces</Filter>
+    </ClCompile>
+    <ClCompile Include="AuxWrapper.cpp">
+      <Filter>Source Files\Classes</Filter>
+    </ClCompile>
+    <ClCompile Include="Leaks.cpp">
+      <Filter>Source Files\Classes</Filter>
+    </ClCompile>
+    <ClCompile Include="privileges.cpp">
+      <Filter>Source Files\Classes</Filter>
+    </ClCompile>
+    <ClCompile Include="ProcessHandle.cpp">
+      <Filter>Source Files\Classes</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="detour.h">
-      <Filter>Header Files\namespaces</Filter>
+      <Filter>Header Files\Namespaces</Filter>
     </ClInclude>
     <ClInclude Include="resolve.h">
-      <Filter>Header Files\namespaces</Filter>
+      <Filter>Header Files\Namespaces</Filter>
     </ClInclude>
     <ClInclude Include="ntcreatefile.h">
-      <Filter>Header Files\hooks</Filter>
+      <Filter>Header Files\Hooks</Filter>
     </ClInclude>
     <ClInclude Include="ntdeviceiocontrolfile.h">
-      <Filter>Header Files\hooks</Filter>
-    </ClInclude>
-    <ClInclude Include="typedefs.h">
-      <Filter>Header Files\types</Filter>
+      <Filter>Header Files\Hooks</Filter>
     </ClInclude>
     <ClInclude Include="dispatchfunctions.h">
-      <Filter>Header Files\main driver functions</Filter>
+      <Filter>Header Files\Main driver functions</Filter>
     </ClInclude>
     <ClInclude Include="hook.h">
-      <Filter>Header Files\namespaces</Filter>
+      <Filter>Header Files\Namespaces</Filter>
     </ClInclude>
-    <ClInclude Include="20h2Eprocess.h">
-      <Filter>Header Files\types</Filter>
+    <ClInclude Include="AuxWrapper.h">
+      <Filter>Header Files\Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="Leaks.h">
+      <Filter>Header Files\Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="privileges.h">
+      <Filter>Header Files\Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="ProcessHandle.h">
+      <Filter>Header Files\Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="kutypes.h">
+      <Filter>Header Files\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="LeaksTypes.h">
+      <Filter>Header Files\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="ProcessHandleTypes.h">
+      <Filter>Header Files\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="typesndefs.h">
+      <Filter>Header Files\Types</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

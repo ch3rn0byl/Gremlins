@@ -9,28 +9,28 @@
 /// </summary>
 namespace resolve
 {
-	_Success_(return >= 0)
+	_Ret_maybenull_
 	NTSTATUS KiSystemServiceUser(
 		_In_ UINT64 address,
-		_Out_ _Ret_maybenull_ PUINT64 result
+		_Out_ PUINT64 result
 	);
 
-	_Success_(return >= 0)
+	_Ret_maybenull_
 	NTSTATUS KeServiceDescriptorTable(
 		_In_ UINT64 address,
-		_Out_ _Ret_maybenull_ PUINT64 result
+		_Out_ PUINT64 result
 	);
 
-	_Success_(return >= 0)
+	_Ret_maybenull_
 	NTSTATUS IopXxxControlFile(
 		_In_ UINT64 address,
-		_Out_ _Ret_maybenull_ PUINT64 result
+		_Out_ PUINT64 result
 	);
 
-	_Success_(return >= 0)
+	_Ret_maybenull_
 	NTSTATUS IopCreateFile(
 		_In_ UINT64 address,
-		_Out_ _Ret_maybenull_ PUINT64 result
+		_Out_ PUINT64 result
 	);
 }
 

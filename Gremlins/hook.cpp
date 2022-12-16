@@ -7,30 +7,35 @@
 /// </summary>
 /// <param name="address"></param>
 /// <returns>true/false</returns>
-bool hook::isFunctionHookedByAddress(PVOID address)
+_Use_decl_annotations_
+bool
+hook::isFunctionHookedByAddress(
+	PVOID address
+)
 {
-	KIRQL OldIrql;
+	KIRQL OldIrql = 0;
+
+	PLIST_ENTRY temp = nullptr;
+	PHOOKED_SYSCALLS HookedSyscall = nullptr;
 
 	ExAcquireSpinLock(&g_Globals->kSpinLock, &OldIrql);
 
 	if (!IsListEmpty(&g_Globals->ListHead))
 	{
-		PLIST_ENTRY temp = &g_Globals->ListHead;
+		temp = &g_Globals->ListHead;
 
 		do
 		{
 			temp = temp->Flink;
+			HookedSyscall = CONTAINING_RECORD(temp, HOOKED_SYSCALLS, entry);
 
-			PHOOKED_NT_FUNCTION hooked = CONTAINING_RECORD(temp, HOOKED_NT_FUNCTION, entry);
-
-			///
-			/// If an entry is found and it's our address, return the hook information.
-			/// 
-			if (hooked->address == address)
+			//
+			// If an entry is found and it's our address, return the hook information.
+			//
+			if (HookedSyscall->address == address)
 			{
 				ExReleaseSpinLock(&g_Globals->kSpinLock, OldIrql);
-
-				return hooked->isHooked;
+				return HookedSyscall->IsHooked;
 			}
 		} while (temp->Flink != &g_Globals->ListHead);
 	}
@@ -39,37 +44,35 @@ bool hook::isFunctionHookedByAddress(PVOID address)
 	return false;
 }
 
-/// <summary>
-/// Will check to see if the given function is hooked by its address. It will iterate 
-/// through the LIST_ENTRY member of GLOBALS and check if there is a match. It will 
-/// then return the "isHooked" member. 
-/// </summary>
-/// <param name="address"></param>
-/// <returns>true/false</returns>
-bool hook::isFunctionHookedByIndex(UINT16 index)
+_Use_decl_annotations_
+bool
+hook::isFunctionHookedByIndex(
+	UINT16 index
+)
 {
-	KIRQL OldIrql;
+	KIRQL OldIrql = 0;
+
+	PLIST_ENTRY temp = nullptr;
+	PHOOKED_SYSCALLS hooked = nullptr;
 
 	ExAcquireSpinLock(&g_Globals->kSpinLock, &OldIrql);
 
 	if (!IsListEmpty(&g_Globals->ListHead))
 	{
-		PLIST_ENTRY temp = &g_Globals->ListHead;
+		temp = &g_Globals->ListHead;
 
 		do
 		{
 			temp = temp->Flink;
+			hooked = CONTAINING_RECORD(temp, HOOKED_SYSCALLS, entry);
 
-			PHOOKED_NT_FUNCTION hooked = CONTAINING_RECORD(temp, HOOKED_NT_FUNCTION, entry);
-
-			///
-			/// If an entry is found and it's our address, return the hook information.
-			/// 
-			if (hooked->index == index)
+			//
+			// If an entry is found and it's our address, return the hook information.
+			// 
+			if (hooked->Index == index)
 			{
 				ExReleaseSpinLock(&g_Globals->kSpinLock, OldIrql);
-
-				return hooked->isHooked;
+				return hooked->IsHooked;
 			}
 		} while (temp->Flink != &g_Globals->ListHead);
 	}
@@ -78,53 +81,58 @@ bool hook::isFunctionHookedByIndex(UINT16 index)
 	return false;
 }
 
-/// <summary>
-/// Responsible for unhooking a given function.
-/// This works by iterating through the LIST_ENTRY member inside GLOBALS. If the address is found,
-/// it will then use the detour namespace to overwrite our hook in memory. After it is done, it 
-/// will then remove the entry from the list. 
-/// </summary>
-/// <param name="address"></param>
-/// <returns>STATUS_SUCCESS/STATUS_NOT_FOUND/STATUS_INSUFFICIENT_RESOURCES</returns>
-NTSTATUS hook::unhookFunction(UINT16 index)
+_Use_decl_annotations_
+NTSTATUS
+hook::unhookFunction(
+	UINT16 index
+)
 {
-	KIRQL OldIrql;
+	KIRQL OldIrql = 0;
+
+	PLIST_ENTRY temp = nullptr;
+	PHOOKED_SYSCALLS hooked = nullptr;
+
+	NTSTATUS Status = STATUS_NOT_FOUND;
 
 	ExAcquireSpinLock(&g_Globals->kSpinLock, &OldIrql);
 
 	if (!IsListEmpty(&g_Globals->ListHead))
 	{
-		PLIST_ENTRY temp = &g_Globals->ListHead;
+		temp = &g_Globals->ListHead;
 
 		do
 		{
 			temp = temp->Flink;
+			hooked = CONTAINING_RECORD(temp, HOOKED_SYSCALLS, entry);
 
-			PHOOKED_NT_FUNCTION hooked = CONTAINING_RECORD(temp, HOOKED_NT_FUNCTION, entry);
-
-			///
-			/// If an entry is found and it's our address, check if its hooked. If it is hooked,
-			/// unhook it.
-			/// 
-			if (hooked->index == index && hooked->isHooked)
+			//
+			// If an entry is found and it's our address, check if its hooked. If it is hooked,
+			// unhook it.
+			// 
+			if (hooked->Index == index && hooked->IsHooked)
 			{
-				NTSTATUS Status = detour::unhook(
-					hooked->address, 
-					hooked->original, 
+				Status = detour::unhook(
+					hooked->address,
+					hooked->original,
 					sizeof(hooked->original)
 				);
 
-				///
-				/// Since we are unhooking this entry, we no longer need it inside our list.
-				/// Safe to remove it.
-				/// 
+				//
+				// Since we are unhooking this entry, we no longer need it inside our list.
+				// Safe to remove it.
+				// 
 				RemoveEntryList(temp);
 
-				///
-				/// Now the entry is removed, zero this region of memory and then free it.
-				/// 
-				RtlSecureZeroMemory(hooked, sizeof(HOOKED_NT_FUNCTION));
+				//
+				// Now the entry is removed, zero this region of memory and then free it.
+				// 
+				RtlSecureZeroMemory(hooked, sizeof(HOOKED_SYSCALLS));
+
+#ifdef DBG
+				ExFreePoolWithTag(hooked, POOLTAG_DBG);
+#else
 				ExFreePoolWithTag(hooked, POOLTAG);
+#endif // DBG
 
 				ExReleaseSpinLock(&g_Globals->kSpinLock, OldIrql);
 
@@ -134,27 +142,32 @@ NTSTATUS hook::unhookFunction(UINT16 index)
 	}
 
 	ExReleaseSpinLock(&g_Globals->kSpinLock, OldIrql);
-	return STATUS_NOT_FOUND;
+	return Status;
 }
 
-/// <summary>
-/// Responsible for clean up. Will iterate through each entry in the list and then zero
-/// the memory by using RtlSecureZeroMemory and then freeing that region of memory. 
-/// </summary>
-void hook::cleanup()
+void
+hook::cleanup()
 {
+	PLIST_ENTRY pe = nullptr;
+	PHOOKED_SYSCALLS hooked = nullptr;
+
 	do
 	{
-		PLIST_ENTRY pe = ExInterlockedRemoveHeadList(
-			&g_Globals->ListHead, 
+		pe = ExInterlockedRemoveHeadList(
+			&g_Globals->ListHead,
 			&g_Globals->kInterlockedSpinLock
 		);
 
-		PHOOKED_NT_FUNCTION hooked = CONTAINING_RECORD(pe, HOOKED_NT_FUNCTION, entry);
+		hooked = CONTAINING_RECORD(pe, HOOKED_SYSCALLS, entry);
 
-		RtlSecureZeroMemory(hooked, sizeof(HOOKED_NT_FUNCTION));
+		RtlSecureZeroMemory(hooked, sizeof(HOOKED_SYSCALLS));
 
+#ifdef DBG
+		ExFreePoolWithTag(hooked, POOLTAG_DBG);
+#else
 		ExFreePoolWithTag(hooked, POOLTAG);
+#endif // DBG
+
 	} while (!IsListEmpty(&g_Globals->ListHead));
 }
 

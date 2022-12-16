@@ -1,5 +1,6 @@
 #pragma once
-#include <Windows.h>
+#include <windef.h>
+#include <cstdint>
 
 ///-------------------------------------------------------------------------------------------------
 /// Macaroo's
@@ -10,6 +11,17 @@
         (#_name_)                                       \
     );
 
+#define ENCODE_CTL(Function) ( \
+    ((0x8000) << 16) |                  \
+    ((FILE_READ_ACCESS) << 14) |              \
+    ((Function) << 2) |                     \
+    (METHOD_BUFFERED)                       \
+)
+
+#define CTL_CODE( DeviceType, Function, Method, Access ) (                 \
+    ((DeviceType) << 16) | ((Access) << 14) | ((Function) << 2) | (Method) \
+)
+
 ///-------------------------------------------------------------------------------------------------
 /// Definitions
 ///-------------------------------------------------------------------------------------------------
@@ -18,30 +30,41 @@
 #define STATUS_UNSUCCESSFUL         ((NTSTATUS)0xC0000001L)
 #define STATUS_INFO_LENGTH_MISMATCH ((NTSTATUS)0xC0000004L)
 
+#define FILE_ANY_ACCESS                 0
+#define FILE_SPECIAL_ACCESS    (FILE_ANY_ACCESS)
+#define FILE_READ_ACCESS          ( 0x0001 )    // file & pipe
+#define FILE_WRITE_ACCESS         ( 0x0002 )    // file & pipe
+
+#define METHOD_BUFFERED                 0
+#define METHOD_IN_DIRECT                1
+#define METHOD_OUT_DIRECT               2
+#define METHOD_NEITHER                  3
+
 constexpr const wchar_t* lpFileName = L"\\\\.\\Gremlins";
 constexpr const wchar_t* ServiceName = L"gremlins";
 
 /// 
 /// Syscall signature for ntdll. 
 /// 
-uint8_t SyscallSig[] = {
+static UINT8 SyscallSig[] = {
     0x4c, 0x8b, 0xd1,	// mov r10, rcx
     0xb8				// mov eax, ??
 };
 
-///-------------------------------------------------------------------------------------------------
-/// Types
-///-------------------------------------------------------------------------------------------------
-typedef enum _IOCTL_FUNCTION : INT32
+//====================================================
+// Types: IOCTLs
+//====================================================
+enum IOCTL_FUNCTION : INT32
 {
-    IsInitialized = CTL_CODE(0x8000, 0x800, METHOD_BUFFERED, FILE_READ_DATA | FILE_WRITE_DATA),
-    Initialize = CTL_CODE(0x8000, 0x801, METHOD_BUFFERED, FILE_READ_DATA | FILE_WRITE_DATA),
-    IsHooked = CTL_CODE(0x8000, 0x802, METHOD_BUFFERED, FILE_READ_DATA | FILE_WRITE_DATA),
-    Hook = CTL_CODE(0x8000, 0x803, METHOD_BUFFERED, FILE_READ_DATA | FILE_WRITE_DATA),
-    Unhook = CTL_CODE(0x8000, 0x804, METHOD_BUFFERED, FILE_READ_DATA | FILE_WRITE_DATA)
-} IOCTL_FUNCTION;
+    IsInitialized = ENCODE_CTL(0x800),
+    Initialize = ENCODE_CTL(0x801),
+    IsHooked = ENCODE_CTL(0x802),
+    Hook = ENCODE_CTL(0x803),
+    Unhook = ENCODE_CTL(0x804)
+};
 
-typedef enum class _SYSTEM_INFORMATION_CLASS
+
+enum SYSTEM_INFORMATION_CLASS
 {
     SystemBasicInformation = 0,
     SystemProcessorInformation = 1,
@@ -271,16 +294,12 @@ typedef enum class _SYSTEM_INFORMATION_CLASS
     SystemCodeIntegrityClearDynamicStores = 225,
     SystemPoolZeroingInformation = 227,
     MaxSystemInfoClass = 228
-} SYSTEM_INFORMATION_CLASS;
+};
 
-///-------------------------------------------------------------------------------------------------
-/// Objects
-///-------------------------------------------------------------------------------------------------
 typedef struct _INPUT_BUFFER
 {
-    uint16_t padding[1] = { 0 };
-    uint16_t syscall = 0;
-    bool status = false;
+    UINT16 syscall;
+    bool status;
 } INPUT_BUFFER, * PINPUT_BUFFER;
 
 typedef struct _SYSTEM_KERNEL_DEBUGGER_INFORMATION
