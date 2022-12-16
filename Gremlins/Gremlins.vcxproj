@@ -151,11 +151,18 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>Default</LanguageStandard>
       <WarningLevel>Level4</WarningLevel>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <DisableSpecificWarnings>5040;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4201;4748;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
+    <Link>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <AdditionalDependencies>Aux_Klib.lib;%(AdditionalDependencies);$(KernelBufferOverflowLib);$(DDK_LIB_PATH)ntoskrnl.lib;$(DDK_LIB_PATH)hal.lib;$(DDK_LIB_PATH)wmilib.lib</AdditionalDependencies>
+    </Link>
+    <DriverSign>
+      <FileDigestAlgorithm>SHA256</FileDigestAlgorithm>
+    </DriverSign>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -172,23 +179,33 @@
     <FilesToPackage Include="$(TargetPath)" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AuxWrapper.cpp" />
     <ClCompile Include="detour.cpp" />
     <ClCompile Include="dispatchfunctions.cpp" />
     <ClCompile Include="hook.cpp" />
+    <ClCompile Include="Leaks.cpp" />
     <ClCompile Include="ntcreatefile.cpp" />
     <ClCompile Include="ntdeviceiocontrolfile.cpp" />
+    <ClCompile Include="privileges.cpp" />
+    <ClCompile Include="ProcessHandle.cpp" />
     <ClCompile Include="resolve.cpp" />
     <ClCompile Include="Source.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AuxWrapper.h" />
     <ClInclude Include="detour.h" />
     <ClInclude Include="dispatchfunctions.h" />
-    <ClInclude Include="20h2Eprocess.h" />
+    <ClInclude Include="typesndefs.h" />
     <ClInclude Include="hook.h" />
+    <ClInclude Include="kutypes.h" />
+    <ClInclude Include="Leaks.h" />
+    <ClInclude Include="LeaksTypes.h" />
     <ClInclude Include="ntcreatefile.h" />
     <ClInclude Include="ntdeviceiocontrolfile.h" />
+    <ClInclude Include="privileges.h" />
+    <ClInclude Include="ProcessHandle.h" />
+    <ClInclude Include="ProcessHandleTypes.h" />
     <ClInclude Include="resolve.h" />
-    <ClInclude Include="typedefs.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

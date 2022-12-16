@@ -1,7 +1,9 @@
 #pragma once
-#include "20h2Eprocess.h"
+#include "typesndefs.h"
 
-EXTERN_C NTSTATUS NtCF(
+EXTERN_C 
+NTSTATUS 
+fn_hNtCreateFile(
     _Out_ PHANDLE FileHandle,
     _In_ ACCESS_MASK DesiredAccess,
     _In_ POBJECT_ATTRIBUTES ObjectAttributes,

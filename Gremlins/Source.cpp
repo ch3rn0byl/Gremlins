@@ -1,5 +1,7 @@
-#include "typedefs.h"
+#include <ntddk.h>
+#include "typesndefs.h"
 #include "dispatchfunctions.h"
+#include "AuxWrapper.h"
 
 UNICODE_STRING g_DeviceName = RTL_CONSTANT_STRING(L"\\Device\\Gremlins");
 UNICODE_STRING g_SymbolicName = RTL_CONSTANT_STRING(L"\\??\\Gremlins");
@@ -8,159 +10,220 @@ PGLOBALS g_Globals = nullptr;
 
 void banner()
 {
-    DbgPrint("                                      @                                      \n");
-    DbgPrint("   ,***((****((((*               @@@@@@@@@@@               ,****,,,,**,,,.   \n");
-    DbgPrint("****(############**(((         @@@@@@@@@@@@@@@        .***,,((((((((((((/,,,,\n");
-    DbgPrint("    #################************,@@@@@@@@@,,,,,,,,,,,,*(((((((((((((((((    \n");
-    DbgPrint("     ###################*************@@@,,,**,,,,*,*,(((((((((((((((((((     \n");
-    DbgPrint("      #################******(/*******,,*,*,,,//,,,,*,(((((((((((((((((      \n");
-    DbgPrint("       ################*****#***/##***.,*,((/***(,,*,,((((((((((((((((       \n");
-    DbgPrint("        ###############(*****##/##*,,*,,..,((*((,,,,,/(((((((((((((((        \n");
-    DbgPrint("           ############****,**********,,,,,,,,,,,,,,,,((((((((((((           \n");
-    DbgPrint("                  #####*******.%******,,,,,,,%.,,,,,,*(((((                  \n");
-    DbgPrint("                       ,,,******....*%*%**.(.,,,,,,...                       \n");
-    DbgPrint("                   ,,,,,,,,,,*********,,,,,,,,,,..........                   \n");
-    DbgPrint("                  ,,,,,,,,,/(/,,**,***,,,,.,,,.*/*.........                  \n");
-    DbgPrint("                 .,,,,,,,,,,,#####*,,,,...,(((((...........                  \n");
-    DbgPrint("                ,,,,,,,,,,,,#######***.,,,(((((((............                \n");
-    DbgPrint("                      , ,,,,##########(((((((((((.... .                      \n");
-    DbgPrint("                                ########(((((*                               \n");
+	//
+	// Using LOG_ERR because it prints regardless of what flag you specify.
+	//
+	LOG_ERR("                                      @                                      \n", NULL);
+	LOG_ERR("   ,***((****((((*               @@@@@@@@@@@               ,****,,,,**,,,.   \n", NULL);
+	LOG_ERR("****(############**(((         @@@@@@@@@@@@@@@        .***,,((((((((((((/,,,,\n", NULL);
+	LOG_ERR("    #################************,@@@@@@@@@,,,,,,,,,,,,*(((((((((((((((((    \n", NULL);
+	LOG_ERR("     ###################*************@@@,,,**,,,,*,*,(((((((((((((((((((     \n", NULL);
+	LOG_ERR("      #################******(/*******,,*,*,,,//,,,,*,(((((((((((((((((      \n", NULL);
+	LOG_ERR("       ################*****#***/##***.,*,((/***(,,*,,((((((((((((((((       \n", NULL);
+	LOG_ERR("        ###############(*****##/##*,,*,,..,((*((,,,,,/(((((((((((((((        \n", NULL);
+	LOG_ERR("           ############****,**********,,,,,,,,,,,,,,,,((((((((((((           \n", NULL);
+	LOG_ERR("                  #####*******.%******,,,,,,,%.,,,,,,*(((((                  \n", NULL);
+	LOG_ERR("                       ,,,******....*%*%**.(.,,,,,,...                       \n", NULL);
+	LOG_ERR("                   ,,,,,,,,,,*********,,,,,,,,,,..........                   \n", NULL);
+	LOG_ERR("                  ,,,,,,,,,/(/,,**,***,,,,.,,,.*/*.........                  \n", NULL);
+	LOG_ERR("                 .,,,,,,,,,,,#####*,,,,...,(((((...........                  \n", NULL);
+	LOG_ERR("                ,,,,,,,,,,,,#######***.,,,(((((((............                \n", NULL);
+	LOG_ERR("                      , ,,,,##########(((((((((((.... .                      \n", NULL);
+	LOG_ERR("                                ########(((((*                               \n", NULL);
+	LOG_ERR("                         Gremlins: A Syscall Fuzzer                          \n", NULL);
 }
 
-NTSTATUS DriverDispatchTable(
-    _In_ PDEVICE_OBJECT,
-    _In_ PIRP Irp
+_Function_class_(DRIVER_DISPATCH)
+_Dispatch_type_(IRP_MJ_DEVICE_CONTROL)
+_IRQL_requires_(PASSIVE_LEVEL)
+NTSTATUS
+DriverDispatchRoutine(
+	_In_ PDEVICE_OBJECT,
+	_In_ PIRP Irp
 )
 {
-    NTSTATUS Status = STATUS_UNSUCCESSFUL;
+	NTSTATUS Status = STATUS_NOT_IMPLEMENTED;
 
-    PIO_STACK_LOCATION pCurrentIrpLocation = IoGetCurrentIrpStackLocation(Irp);
-    ULONG Information = 0;
+	ULONG Information = NULL;
+	UINT32 IoControlCode = NULL;
 
-    UINT32 ui32IoControlCode = pCurrentIrpLocation->Parameters.DeviceIoControl.IoControlCode;
+	PIO_STACK_LOCATION IoStackLocation = nullptr;
+	PINPUT_BUFFER InputBuffer = nullptr;
 
-    switch (ui32IoControlCode)
-    {
-    case IOCTL_FUNCTION::IsInitialized:
-        Status = isInitialized(Irp, &Information);
-        break;
-    case IOCTL_FUNCTION::Initialize:
-        Status = initialize(Irp);
-        break;
-    case IOCTL_FUNCTION::IsHooked:
-        Status = isSyscallHooked(Irp, &Information);
-        break;
-    case IOCTL_FUNCTION::Hook:
-        Status = hookSyscall(Irp);
-        break;
-    case IOCTL_FUNCTION::Unhook:
-        Status = unhookSyscall(Irp);
-        break;
-    default:
-        break;
-    }
+	IoStackLocation = IoGetCurrentIrpStackLocation(Irp);
+	IoControlCode = IoStackLocation->Parameters.DeviceIoControl.IoControlCode;
 
-    Irp->IoStatus.Status = Status;
-    Irp->IoStatus.Information = Information;
+	//
+	// METHOD_BUFFERED is being used; therefore, access dat thang via SystemBuffer.
+	//
+	InputBuffer = static_cast<PINPUT_BUFFER>(
+		Irp->AssociatedIrp.SystemBuffer
+		);
 
-    IofCompleteRequest(Irp, IO_NO_INCREMENT);
+	switch (IoControlCode)
+	{
+	case IsInitialized:
+		Status = IsModuleInitialized(InputBuffer, &Information);
+		break;
+	case Initialize:
+		Status = InitializeModule();
+		break;
+	case IsHooked:
+		Status = IsSyscallHooked(InputBuffer, &Information);
+		break;
+	case Hook:
+		Status = HookSyscall(InputBuffer);
+		break;
+	case Unhook:
+		Status = UnhookSyscall(InputBuffer);
+		break;
+	default:
+		break;
+	}
 
-    return Status;
+	Irp->IoStatus.Status = Status;
+	Irp->IoStatus.Information = Information;
+
+	IofCompleteRequest(Irp, IO_NO_INCREMENT);
+
+	return STATUS_SUCCESS;
 }
 
-NTSTATUS DriverCreateClose(
-    _In_ PDEVICE_OBJECT,
-    _In_ PIRP Irp
+_Function_class_(DRIVER_DISPATCH)
+_Dispatch_type_(IRP_MJ_CREATE)
+_Dispatch_type_(IRP_MJ_CLOSE)
+_IRQL_requires_(PASSIVE_LEVEL)
+NTSTATUS
+DriverCreateClose(
+	_In_ PDEVICE_OBJECT,
+	_In_ PIRP Irp
 )
 {
-    Irp->IoStatus.Information = 0;
-    Irp->IoStatus.Status = STATUS_SUCCESS;
+	Irp->IoStatus.Information = 0;
+	Irp->IoStatus.Status = STATUS_SUCCESS;
 
-    IofCompleteRequest(Irp, IO_NO_INCREMENT);
+	IofCompleteRequest(Irp, IO_NO_INCREMENT);
 
-    return STATUS_SUCCESS;
+	return STATUS_SUCCESS;
 }
 
-void DriverUnload(
-    _In_ PDRIVER_OBJECT DriverObject
+_Function_class_(DRIVER_UNLOAD)
+_IRQL_requires_(PASSIVE_LEVEL)
+VOID
+DriverUnload(
+	_In_ PDRIVER_OBJECT DriverObject
 )
 {
-    if (!IsListEmpty(&g_Globals->ListHead))
-    {
-        hook::cleanup();
-    }
+	//
+	// If g_Globals isn't empty, clear it and release the pool.
+	//
+	if (g_Globals != nullptr)
+	{
+		RtlSecureZeroMemory(g_Globals, sizeof(g_Globals));
+#ifdef DBG
+		ExFreePoolWithTag(g_Globals, POOLTAG_DBG);
+#else
+		ExFreePoolWithTag(g_Globals, POOLTAG);
+#endif // DBG
+		g_Globals = nullptr;
+	}
 
-    IoDeleteSymbolicLink(&g_SymbolicName);
-    IoDeleteDevice(DriverObject->DeviceObject);
+	IoDeleteSymbolicLink(&g_SymbolicName);
+	IoDeleteDevice(DriverObject->DeviceObject);
+
+	LOG_TRACE("[%ws::%d] Completed successfully.\n", __FUNCTIONW__, __LINE__);
 }
 
-EXTERN_C NTSTATUS DriverEntry(
-    _In_ PDRIVER_OBJECT DriverObject,
-    _In_ PUNICODE_STRING
+_Function_class_(DRIVER_INITIALIZE)
+_IRQL_requires_(PASSIVE_LEVEL)
+EXTERN_C
+NTSTATUS
+DriverEntry(
+	_In_ PDRIVER_OBJECT DriverObject,
+	_In_ PUNICODE_STRING
 )
 {
-    NTSTATUS Status = STATUS_FAILED_DRIVER_ENTRY;
-    PDEVICE_OBJECT DeviceObject = nullptr;
+	PDEVICE_OBJECT DeviceObject = nullptr;
 
-    banner();
+	NTSTATUS Status = STATUS_INSUFFICIENT_RESOURCES;
 
-    g_Globals = static_cast<PGLOBALS>(
-        ExAllocatePoolWithTag(NonPagedPoolNx, sizeof(GLOBALS), POOLTAG)
-        );
-    if (g_Globals == NULL)
-    {
-        Status = STATUS_INSUFFICIENT_RESOURCES;
+	banner();
 
-#ifndef _DEBUG
-        DbgPrint("[%ws::%d] ExAllocatePoolWithTag failed: %08x\n", __FUNCTIONW__, __LINE__, Status);
-#endif 
-        return Status;
-    }
-    else
-    {
-        RtlSecureZeroMemory(g_Globals, sizeof(GLOBALS));
-    }
+	//
+	// Allocate all the global variables. The buffer is initialized to zero.
+	// 
+	g_Globals = static_cast<PGLOBALS>(
+#ifdef DBG
+		ExAllocatePool2(POOL_FLAG_NON_PAGED | POOL_FLAG_SPECIAL_POOL, sizeof(GLOBALS), POOLTAG_DBG)
+#else
+		ExAllocatePool2(POOL_FLAG_NON_PAGED, sizeof(GLOBALS), POOLTAG)
+#endif // DBG
+		);
+	if (g_Globals == NULL)
+	{
+		LOG_ERR("[%ws::%d] Failed with 0x%08x.\n", __FUNCTIONW__, __LINE__, Status);
+		return Status;
+	}
 
-    KeInitializeSpinLock(&g_Globals->kSpinLock);
-    KeInitializeSpinLock(&g_Globals->kInterlockedSpinLock);
+	LOG_TRACE("[%ws::%d] g_Globals allocated at %p.\n", __FUNCTIONW__, __LINE__, g_Globals);
 
-    ExInitializeFastMutex(&g_Globals->fMutex);
-    InitializeListHead(&g_Globals->ListHead);
+	// 
+	// Initialize the spinlocks, mutex, and list head. 
+	// 
+	// The kSpinLock is used for the ListHead.
+	// The fMutex is used for printing information to the debugger.
+	//
+	KeInitializeSpinLock(&g_Globals->kSpinLock);
+	KeInitializeSpinLock(&g_Globals->kInterlockedSpinLock);
 
-    Status = IoCreateDevice(DriverObject, 0, &g_DeviceName, FILE_DEVICE_UNKNOWN, FILE_DEVICE_SECURE_OPEN, TRUE, &DeviceObject);
-    if (!NT_SUCCESS(Status))
-    {
-#ifndef _DEBUG
-        DbgPrint("[%ws::%d] IoCreateDevice failed: %08x\n", __FUNCTIONW__, __LINE__, Status);
-#endif 
-        if (DeviceObject)
-        {
-            IoDeleteDevice(DeviceObject);
-        }
-        return Status;
-    }
+	ExInitializeFastMutex(&g_Globals->fMutex);
+	InitializeListHead(&g_Globals->ListHead);
 
-    Status = IoCreateSymbolicLink(&g_SymbolicName, &g_DeviceName);
-    if (!NT_SUCCESS(Status))
-    {
-#ifndef _DEBUG
-        DbgPrint("[%ws::%d] IoCreateSymbolicLink failed: %08x\n", __FUNCTIONW__, __LINE__, Status);
-#endif 
-        IoDeleteDevice(DeviceObject);
-        return Status;
-    }
+	Status = IoCreateDevice(
+		DriverObject,
+		NULL,
+		&g_DeviceName,
+		FILE_DEVICE_UNKNOWN,
+		FILE_DEVICE_SECURE_OPEN,
+		TRUE,
+		&DeviceObject
+	);
+	if (!NT_SUCCESS(Status))
+	{
+		LOG_ERR("[%ws::%d] Failed with 0x%08x.\n", __FUNCTIONW__, __LINE__, Status);
 
-    DeviceObject->Flags |= DO_BUFFERED_IO;
+		if (DeviceObject)
+		{
+			IoDeleteDevice(DeviceObject);
+		}
+		return Status;
+	}
 
-    DriverObject->DriverUnload = DriverUnload;
-    DriverObject->MajorFunction[IRP_MJ_CREATE] = DriverCreateClose;
-    DriverObject->MajorFunction[IRP_MJ_CLOSE] = DriverCreateClose;
-    DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL] = DriverDispatchTable;
+	//
+	// Create the symbolic link to interact with the driver.
+	//
+	Status = IoCreateSymbolicLink(&g_SymbolicName, &g_DeviceName);
+	if (!NT_SUCCESS(Status))
+	{
+		LOG_ERR("[%ws::%d] Failed with 0x%08x.\n", __FUNCTIONW__, __LINE__, Status);
 
-#ifndef _DEBUG
-    DbgPrint("[%ws::%d] Completed successfully.\n", __FUNCTIONW__, __LINE__, Status);
-#endif 
-    return Status;
+		IoDeleteDevice(DeviceObject);
+		return Status;
+	}
+
+	//
+	// We are using METHOD BUFFERED. Reflect that in the flags.
+	//
+	DeviceObject->Flags |= DO_BUFFERED_IO;
+
+	DriverObject->DriverUnload = DriverUnload;
+	DriverObject->MajorFunction[IRP_MJ_CREATE] =
+		DriverObject->MajorFunction[IRP_MJ_CLOSE] = DriverCreateClose;
+	DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL] = DriverDispatchRoutine;
+
+	LOG_TRACE("[%ws::%d] Completed successfully.\n", __FUNCTIONW__, __LINE__);
+
+	return Status;
 }
 
 

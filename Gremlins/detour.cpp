@@ -9,15 +9,21 @@
 /// <param name="BaseAddress"></param>
 /// <param name="patch"></param>
 /// <param name="szSize"></param>
-/// <returns>STATUS_SUCCESS/STATUS_INSUFFICIENT_RESOURCES</returns>
-NTSTATUS detour::hook(PVOID BaseAddress, PUINT8 patch, size_t szSize)
+/// <returns>STATUS_SUCCESS</returns>
+/// <returns>STATUS_INSUFFICIENT_RESOURCES</returns>
+_Use_decl_annotations_
+NTSTATUS
+detour::hook(
+	PVOID BaseAddress,
+	PUINT8 patch,
+	size_t szSize
+)
 {
 	PHYSICAL_ADDRESS pa = MmGetPhysicalAddress(BaseAddress);
 
 	PVOID mappedAddress = MmMapIoSpace(pa, 0x60, MmNonCached);
 	if (mappedAddress == NULL)
 	{
-		DbgPrint("[%ws::%d] MmMapIoSpace failed: %08x\n", __FUNCTIONW__, __LINE__, STATUS_INSUFFICIENT_RESOURCES);
 		return STATUS_INSUFFICIENT_RESOURCES;
 	}
 
@@ -28,7 +34,6 @@ NTSTATUS detour::hook(PVOID BaseAddress, PUINT8 patch, size_t szSize)
 	return STATUS_SUCCESS;
 }
 
-
 /// <summary>
 /// Unhooks the region of memory specified. This function does the same thing as 
 /// detour::hook, but copies the original bytes instead putting the function into its
@@ -37,15 +42,21 @@ NTSTATUS detour::hook(PVOID BaseAddress, PUINT8 patch, size_t szSize)
 /// <param name="BaseAddress"></param>
 /// <param name="Source"></param>
 /// <param name="szSize"></param>
-/// <returns>STATUS_SUCCESS/STATUS_INSUFFICIENT_RESOURCES</returns>
-NTSTATUS detour::unhook(PVOID BaseAddress, PUINT8 Source, UINT8 szSize)
+/// <returns>STATUS_SUCCESS</returns>
+/// <returns>STATUS_INSUFFICIENT_RESOURCES</returns>
+_Use_decl_annotations_
+NTSTATUS
+detour::unhook(
+	PVOID BaseAddress,
+	PUINT8 Source,
+	UINT8 szSize
+)
 {
 	PHYSICAL_ADDRESS pa = MmGetPhysicalAddress(BaseAddress);
 
 	PVOID mappedAddress = MmMapIoSpace(pa, 0x60, MmNonCached);
 	if (mappedAddress == NULL)
 	{
-		DbgPrint("[%ws::%d] MmMapIoSpace failed: %08x\n", __FUNCTIONW__, __LINE__, STATUS_INSUFFICIENT_RESOURCES);
 		return STATUS_INSUFFICIENT_RESOURCES;
 	}
 

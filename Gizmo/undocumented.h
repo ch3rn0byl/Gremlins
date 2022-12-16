@@ -1,5 +1,5 @@
 #pragma once
-#include "defs.h"
+#include "types.h"
 
 typedef NTSTATUS(NTAPI* _NtQuerySystemInformation)(
     _In_ SYSTEM_INFORMATION_CLASS SystemInformationClass,

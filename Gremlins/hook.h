@@ -1,5 +1,5 @@
 #pragma once
-#include "typedefs.h"
+#include "typesndefs.h"
 #include "detour.h"
 
 /// <summary>
@@ -8,20 +8,20 @@
 /// </summary>
 namespace hook
 {
-	_Success_(return >= 0)
-	bool isFunctionHookedByAddress(
-		_In_ PVOID address
-	);
+	_Success_(return != 0)
+		bool isFunctionHookedByAddress(
+			_In_ PVOID address
+		);
 
-	_Success_(return >= 0)
-	bool isFunctionHookedByIndex(
-		_In_ UINT16 index
-	);
+	_Success_(return != 0)
+		bool isFunctionHookedByIndex(
+			_In_ UINT16 index
+		);
 
-	_Success_(return >= 0)
-	NTSTATUS unhookFunction(
-		_In_ UINT16 index
-	);
+	_Success_(return != 0)
+		NTSTATUS unhookFunction(
+			_In_ UINT16 index
+		);
 
 	void cleanup();
 }

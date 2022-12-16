@@ -1,7 +1,12 @@
 #pragma once
-#include "20h2Eprocess.h"
+#include "typesndefs.h"
+#include "ProcessHandle.h"
+#include "Leaks.h"
+#include "privileges.h"
 
-EXTERN_C NTSTATUS NtDICF(
+EXTERN_C
+NTSTATUS
+fn_hNtDeviceIoControlFile(
     _In_ HANDLE FileHandle,
     _In_opt_ HANDLE Event,
     _In_opt_ PIO_APC_ROUTINE ApcRoutine,
@@ -15,4 +20,4 @@ EXTERN_C NTSTATUS NtDICF(
 );
 
 
-/// EOF 
+/// EOF

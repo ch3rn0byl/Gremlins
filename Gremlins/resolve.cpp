@@ -10,6 +10,7 @@
 /// <param name="address"></param>
 /// <param name="result"></param>
 /// <returns>STATUS_SUCCESS/STATUS_NOT_FOUND</returns>
+_Use_decl_annotations_
 NTSTATUS resolve::KiSystemServiceUser(UINT64 address, PUINT64 result)
 {
 	UINT8 value = 0;
@@ -43,19 +44,20 @@ NTSTATUS resolve::KiSystemServiceUser(UINT64 address, PUINT64 result)
 /// <param name="address"></param>
 /// <param name="result"></param>
 /// <returns>STATUS_SUCCESS/STATUS_NOT_FOUND</returns>
+_Use_decl_annotations_
 NTSTATUS resolve::KeServiceDescriptorTable(UINT64 address, PUINT64 result)
 {
-	UINT8 ui8SsdtStub[] = {
+	UINT8 SsdtStub[] = {
 		0x4c, 0x8d, 0x15
 	};
 
 	do
 	{
-		if (RtlCompareMemory(reinterpret_cast<PVOID>(address), ui8SsdtStub, sizeof(ui8SsdtStub)) == sizeof(ui8SsdtStub))
+		if (RtlCompareMemory(reinterpret_cast<PVOID>(address), SsdtStub, sizeof(SsdtStub)) == sizeof(SsdtStub))
 		{
 			UINT32 offset = 0;
 
-			address += sizeof(ui8SsdtStub);
+			address += sizeof(SsdtStub);
 
 			RtlCopyMemory(&offset, reinterpret_cast<PVOID>(address), sizeof(offset));
 
@@ -78,6 +80,7 @@ NTSTATUS resolve::KeServiceDescriptorTable(UINT64 address, PUINT64 result)
 /// <param name="address"></param>
 /// <param name="result"></param>
 /// <returns>STATUS_SUCCESS/STATUS_NOT_FOUND</returns>
+_Use_decl_annotations_
 NTSTATUS resolve::IopXxxControlFile(UINT64 address, PUINT64 result)
 {
 	UINT8 value = 0;
@@ -96,7 +99,9 @@ NTSTATUS resolve::IopXxxControlFile(UINT64 address, PUINT64 result)
 			return STATUS_SUCCESS;
 		}
 		address++;
-	} while (true);
+	} while (value != 0xc3);
+
+	return STATUS_NOT_FOUND;
 }
 
 /// <summary>
@@ -108,6 +113,7 @@ NTSTATUS resolve::IopXxxControlFile(UINT64 address, PUINT64 result)
 /// <param name="address"></param>
 /// <param name="result"></param>
 /// <returns>STATUS_SUCCESS/STATUS_NOT_FOUND</returns>
+_Use_decl_annotations_
 NTSTATUS resolve::IopCreateFile(UINT64 address, PUINT64 result)
 {
 	UINT8 value = 0;

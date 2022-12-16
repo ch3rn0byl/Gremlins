@@ -1,351 +1,227 @@
 #include "dispatchfunctions.h"
 
-NTSTATUS isInitialized(PIRP Irp, PULONG Information)
+_Use_decl_annotations_
+NTSTATUS
+IsModuleInitialized(
+	PINPUT_BUFFER& InputBuffer,
+	PULONG Information
+)
 {
-    __try
-    {
-        RtlCopyMemory(
-            Irp->AssociatedIrp.SystemBuffer,
-            &g_Globals->isInitialized,
-            sizeof(g_Globals->isInitialized)
-        );
-        *Information = sizeof(g_Globals->isInitialized);
-    }
-    __except (EXCEPTION_EXECUTE_HANDLER)
-    {
-        return STATUS_ACCESS_VIOLATION;
-    }
-    return STATUS_SUCCESS;
+	InputBuffer->status = g_Globals->IsInitialized;
+	*Information = sizeof(INPUT_BUFFER);
+
+	return STATUS_SUCCESS;
 }
 
-NTSTATUS initialize(PIRP Irp)
+NTSTATUS
+InitializeModule()
 {
-    ANSI_STRING as = { 0 };
-    
-    NTSTATUS Status = STATUS_UNSUCCESSFUL;
+	NTSTATUS Status = STATUS_UNSUCCESSFUL;
 
-    UINT64 ui64KiSystemServiceUser = 0;
-    UINT64 ui64KeServiceDescriptorTable = 0;
-    UINT64 ui64Lstar = __readmsr(IA32_LSTAR_MSR);
+	UINT64 KiSystemServiceuser = 0;
+	UINT64 KeServiceDescriptorTable = 0;
 
-    ///
-    /// Sanity check
-    /// 
-    if (Irp)
-    {
-        RtlInitAnsiString(&as, static_cast<PCSZ>(Irp->AssociatedIrp.SystemBuffer));
-        
-        Status = RtlAnsiStringToUnicodeString(&g_Globals->BinaryName, &as, TRUE);
-        if (!NT_SUCCESS(Status))
-        {
-            DbgPrint("[%ws::%d] RtlAnsiStringToUnicodeString failed: %08x\n", __FUNCTIONW__, __LINE__, &Status);
-            return Status;
-        }
-    }
-    else
-    {
-        DbgPrint("[%ws::%d] Received a null irp.\n", __FUNCTIONW__, __LINE__);
-        return STATUS_IO_DEVICE_ERROR;
-    }
+	// 
+	// Get the lstar address.
+	//
+	UINT64 Lstar = __readmsr(IA32_LSTAR_MSR);
 
-    Status = resolve::KiSystemServiceUser(ui64Lstar, &ui64KiSystemServiceUser);
-    if (!NT_SUCCESS(Status) || ui64KiSystemServiceUser == 0)
-    {
-        DbgPrint("[%ws::%d] Unable to resolve KiSystemServiceUser.\n", __FUNCTIONW__, __LINE__);
-        return STATUS_NOT_FOUND;
-    }
+	Status = resolve::KiSystemServiceUser(Lstar, &KiSystemServiceuser);
+	if (!NT_SUCCESS(Status) || KiSystemServiceuser == NULL)
+	{
+		return Status;
+	}
+	else
+	{
+		//KdPrint(("[%ws::%d] KiSystemServiceUser: %p\n", __FUNCTIONW__, __LINE__, KiSystemServiceuser));
+		LOG_TRACE("[%ws::%d] KiSystemServiceUser: %p.\n", __FUNCTIONW__, __LINE__, KiSystemServiceuser);
+	}
 
-    Status = resolve::KeServiceDescriptorTable(ui64KiSystemServiceUser, &ui64KeServiceDescriptorTable);
-    if (!NT_SUCCESS(Status) || ui64KeServiceDescriptorTable == 0)
-    {
-        DbgPrint("[%ws::%d] Unable to resolve KeServiceDescriptorTable.\n", __FUNCTIONW__, __LINE__);
-        return STATUS_NOT_FOUND;
-    }
+	Status = resolve::KeServiceDescriptorTable(KiSystemServiceuser, &KeServiceDescriptorTable);
+	if (!NT_SUCCESS(Status) || KiSystemServiceuser == NULL)
+	{
+		return Status;
+	}
+	else
+	{
+		LOG_TRACE("[%ws::%d] KeServiceDescriptorTable: %p.\n", __FUNCTIONW__, __LINE__, KeServiceDescriptorTable);
+	}
 
-    g_Globals->ssdt = reinterpret_cast<PKSERVICE_DESCRIPTOR_TABLE>(ui64KeServiceDescriptorTable);
-    g_Globals->isInitialized = true;
+	g_Globals->ssdt = reinterpret_cast<PKSERVICE_DESCRIPTOR_TABLE>(
+		KeServiceDescriptorTable
+		);
+	g_Globals->IsInitialized = true;
 
-    return Status;
+	LOG_TRACE("[%ws::%d] g_Globals has been initialized.\n", __FUNCTIONW__, __LINE__);
+
+	return Status;
 }
 
-NTSTATUS hookSyscall(PIRP Irp)
+_Use_decl_annotations_
+NTSTATUS
+IsSyscallHooked(
+	PINPUT_BUFFER& InputBuffer,
+	PULONG Information
+)
 {
-    NTSTATUS Status = STATUS_UNSUCCESSFUL;
+	//
+	// Validate the user's input.
+	//
+	if (InputBuffer->syscall > g_Globals->ssdt->NumberOfServices ||
+		InputBuffer->syscall < 0)
+	{
+		return STATUS_INVALID_PARAMETER;
+	}
 
-    ULARGE_INTEGER ulBase = { 0 };
+	// TODO: Fix status type or add status type
+	InputBuffer->status = hook::isFunctionHookedByIndex(InputBuffer->syscall);
+	*Information = sizeof(INPUT_BUFFER);
 
-    UINT64 f_hNtFunction = 0;
-
-    PINPUT_BUFFER pUsermodeBuffer = nullptr;
-
-    ///
-    /// Sanity check
-    /// 
-    if (Irp)
-    {
-        __try
-        {
-            pUsermodeBuffer = static_cast<PINPUT_BUFFER>(
-                Irp->AssociatedIrp.SystemBuffer
-                );
-        }
-        __except (EXCEPTION_EXECUTE_HANDLER)
-        {
-            DbgPrint("[%ws::%d] Access violation occured.\n", __FUNCTIONW__, __LINE__);
-            return STATUS_ACCESS_VIOLATION;
-        }
-    }
-    else
-    {
-        DbgPrint("[%ws::%d] Received a null irp.\n", __FUNCTIONW__, __LINE__);
-        return STATUS_IO_DEVICE_ERROR;
-    }
-
-    ///
-    /// Validate the user's input
-    /// 
-    if (pUsermodeBuffer->syscall > g_Globals->ssdt->NumberOfServices || 
-        pUsermodeBuffer->syscall < 0
-        )
-    {
-        DbgPrint("[%ws::%d] %d is not a valid index.\n", __FUNCTIONW__, __LINE__, pUsermodeBuffer->syscall);
-        return STATUS_INVALID_PARAMETER;
-    }
-
-    UINT64 ui64SyscallFunction = reinterpret_cast<UINT64>(g_Globals->ssdt->ServiceTableBase);
-    ui64SyscallFunction += g_Globals->ssdt->ServiceTableBase[pUsermodeBuffer->syscall] >> 4;
-
-    switch (pUsermodeBuffer->syscall)
-    {
-    case SYSCALL_INDEX::NtDeviceIoControlFileIndex:
-    {
-        if (!hook::isFunctionHookedByAddress(reinterpret_cast<PVOID>(ui64SyscallFunction)))
-        {
-            g_Globals->hooked = static_cast<PHOOKED_NT_FUNCTION>(
-                ExAllocatePoolWithTag(NonPagedPoolNx, sizeof(HOOKED_NT_FUNCTION), POOLTAG)
-                );
-            if (g_Globals->hooked == NULL)
-            {
-                Status = STATUS_INSUFFICIENT_RESOURCES;
-
-                DbgPrint("[%ws::%d] ExAllocatePoolWithTag failed: %08x\n", __FUNCTIONW__, __LINE__, Status);
-                return Status;
-            }
-            else
-            {
-                RtlSecureZeroMemory(g_Globals->hooked, sizeof(HOOKED_NT_FUNCTION));
-            }
-
-            g_Globals->hooked->address = reinterpret_cast<PVOID>(ui64SyscallFunction);
-            g_Globals->hooked->index = pUsermodeBuffer->syscall;
-
-            Status = resolve::IopXxxControlFile(
-                reinterpret_cast<UINT64>(g_Globals->hooked->address),
-                reinterpret_cast<PUINT64>(&g_Globals->sub.IopXxxControlFile)
-            );
-            if (!NT_SUCCESS(Status) || g_Globals->sub.IopXxxControlFile == NULL)
-            {
-                DbgPrint("[%ws::%d] Unable to resolve IopXxxControlFile.\n", __FUNCTIONW__, __LINE__);
-                return STATUS_NOT_FOUND;
-            }
-
-            f_hNtFunction = reinterpret_cast<UINT64>(NtDICF);
-
-            RtlCopyMemory(
-                g_Globals->hooked->original,
-                g_Globals->hooked->address,
-                sizeof(g_Globals->hooked->original)
-            );
-
-            RtlCopyMemory(hookedcode + 2, &f_hNtFunction, sizeof(f_hNtFunction));
-
-            Status = detour::hook(
-                reinterpret_cast<PVOID>(ui64SyscallFunction),
-                hookedcode,
-                sizeof(hookedcode)
-            );
-            if (!NT_SUCCESS(Status))
-            {
-                return Status;
-            }
-            else
-            {
-                g_Globals->hooked->isHooked = true;
-            }
-
-            ExInterlockedInsertTailList(
-                &g_Globals->ListHead,
-                &g_Globals->hooked->entry,
-                &g_Globals->kInterlockedSpinLock
-            );
-        }
-        break;
-    }
-    case SYSCALL_INDEX::NtCreateFileIndex:
-    {
-        if (!hook::isFunctionHookedByAddress(reinterpret_cast<PVOID>(ui64SyscallFunction)))
-        {
-            g_Globals->hooked = static_cast<PHOOKED_NT_FUNCTION>(
-                ExAllocatePoolWithTag(NonPagedPoolNx, sizeof(HOOKED_NT_FUNCTION), POOLTAG)
-                );
-            if (g_Globals->hooked == NULL)
-            {
-                Status = STATUS_INSUFFICIENT_RESOURCES;
-
-                DbgPrint("[%ws::%d] ExAllocatePoolWithTag failed: %08x\n", __FUNCTIONW__, __LINE__, Status);
-                return Status;
-            }
-            else
-            {
-                RtlSecureZeroMemory(g_Globals->hooked, sizeof(HOOKED_NT_FUNCTION));
-            }
-
-            g_Globals->hooked->address = reinterpret_cast<PVOID>(ui64SyscallFunction);
-            g_Globals->hooked->index = pUsermodeBuffer->syscall;
-
-            Status = resolve::IopCreateFile(
-                reinterpret_cast<UINT64>(g_Globals->hooked->address),
-                reinterpret_cast<PUINT64>(&g_Globals->sub.IopCreateFile)
-            );
-            if (!NT_SUCCESS(Status) || g_Globals->sub.IopCreateFile == NULL)
-            {
-                DbgPrint("[%ws::%d] Unable to resolve IopCreateFile.\n", __FUNCTIONW__, __LINE__);
-                return STATUS_NOT_FOUND;
-            }
-
-            f_hNtFunction = reinterpret_cast<UINT64>(NtCF);
-
-            RtlCopyMemory(
-                g_Globals->hooked->original,
-                g_Globals->hooked->address,
-                sizeof(g_Globals->hooked->original)
-            );
-
-            RtlCopyMemory(hookedcode + 2, &f_hNtFunction, sizeof(f_hNtFunction));
-
-            Status = detour::hook(
-                reinterpret_cast<PVOID>(ui64SyscallFunction),
-                hookedcode,
-                sizeof(hookedcode)
-            );
-            if (!NT_SUCCESS(Status))
-            {
-                return Status;
-            }
-            else
-            {
-                g_Globals->hooked->isHooked = true;
-            }
-
-            ExInterlockedInsertTailList(
-                &g_Globals->ListHead,
-                &g_Globals->hooked->entry,
-                &g_Globals->kInterlockedSpinLock
-            );
-        }
-        break;
-    }
-    default:
-        DbgPrint("[%ws::%d] %p is not implemented.\n", __FUNCTIONW__, __LINE__, g_Globals->hooked->address);
-        return STATUS_NOT_IMPLEMENTED;
-    }
-
-    return STATUS_SUCCESS;
+	return STATUS_SUCCESS;
 }
 
-NTSTATUS isSyscallHooked(PIRP Irp, PULONG Information)
+_Use_decl_annotations_
+NTSTATUS
+HookSyscall(
+	PINPUT_BUFFER& InputBuffer
+)
 {
-    PINPUT_BUFFER pUsermodeBuffer = nullptr;
+	//
+	// Validate the user provided syscall.
+	//
+	if (InputBuffer->syscall > g_Globals->ssdt->NumberOfServices ||
+		InputBuffer->syscall < 0)
+	{
+		return STATUS_INVALID_PARAMETER;
+	}
 
-    ///
-    /// Sanity check
-    /// 
-    if (Irp)
-    {
-        __try
-        {
-            pUsermodeBuffer = static_cast<PINPUT_BUFFER>(
-                Irp->AssociatedIrp.SystemBuffer
-                );
-        }
-        __except (EXCEPTION_EXECUTE_HANDLER)
-        {
-            DbgPrint("[%ws::%d] Access violation occured.\n", __FUNCTIONW__, __LINE__);
-            return STATUS_ACCESS_VIOLATION;
-        }
-    }
-    else
-    {
-        DbgPrint("[%ws::%d] Received a null irp.\n", __FUNCTIONW__, __LINE__);
-        return STATUS_IO_DEVICE_ERROR;
-    }
+	UINT64 fnSyscall = 0;
+	UINT64 fn_hSyscall = 0;
 
-    ///
-    /// Validate the user's input
-    /// 
-    if (pUsermodeBuffer->syscall > g_Globals->ssdt->NumberOfServices ||
-        pUsermodeBuffer->syscall < 0
-        )
-    {
-        DbgPrint("[%ws::%d] %d is not a valid index.\n", __FUNCTIONW__, __LINE__, pUsermodeBuffer->syscall);
-        return STATUS_INVALID_PARAMETER;
-    }
+	NTSTATUS Status = STATUS_SUCCESS;
 
-    pUsermodeBuffer->status = hook::isFunctionHookedByIndex(pUsermodeBuffer->syscall);
-    __try
-    {
-        RtlCopyMemory(
-            Irp->AssociatedIrp.SystemBuffer,
-            pUsermodeBuffer,
-            sizeof(INPUT_BUFFER)
-        );
+	//
+	// The syscall number is used as an offset to the System Service Descriptor Table. 
+	// To resolve the function of the syscall, one must do the following:
+	//   1. Reference the index with the syscall
+	//   2. Shift it right by four. 
+	//   3. ??
+	//   4. Profit.
+	//
+	fnSyscall = reinterpret_cast<UINT64>(g_Globals->ssdt->ServicetableBase);
+	fnSyscall += g_Globals->ssdt->ServicetableBase[InputBuffer->syscall] >> 4;
 
-        *Information = sizeof(INPUT_BUFFER);
-    }
-    __except (EXCEPTION_EXECUTE_HANDLER)
-    {
-        return STATUS_ACCESS_VIOLATION;
-    }
-    return STATUS_SUCCESS;
+	switch (InputBuffer->syscall)
+	{
+	case NtDeviceIoControlFile:
+		//
+		// Check to make sure the function is not already hooked by querying 
+		// the address.
+		//
+		if (!hook::isFunctionHookedByAddress(reinterpret_cast<PVOID>(fnSyscall)))
+		{
+			g_Globals->hooked = static_cast<PHOOKED_SYSCALLS>(
+#ifdef DBG
+				ExAllocatePool2(POOL_FLAG_NON_PAGED | POOL_FLAG_SPECIAL_POOL, sizeof(GLOBALS), POOLTAG_DBG)
+#else
+				ExAllocatePool2(POOL_FLAG_NON_PAGED, sizeof(GLOBALS), POOLTAG)
+#endif // DBG
+				);
+			if (g_Globals->hooked == NULL)
+			{
+				Status = STATUS_MEMORY_NOT_ALLOCATED;
+				LOG_ERR("[%ws::%d] Failed with status 0x%08x.\n", __FUNCTIONW__, __LINE__, Status);
+				break;
+			}
+
+			LOG_TRACE("[%ws::%d] g_Globals->hooked allocated at %p.\n", __FUNCTIONW__, __LINE__, g_Globals->hooked);
+
+			//
+			// Save the original address of the NT function.
+			//
+			g_Globals->hooked->address = reinterpret_cast<PVOID>(fnSyscall);
+			g_Globals->hooked->Index = InputBuffer->syscall;
+
+			//
+			// NtDeviceIoControlFile has an internal function it hits. Will need to 
+			// resolve IopXxxControlFile. 
+			//
+			Status = resolve::IopXxxControlFile(
+				reinterpret_cast<UINT64>(g_Globals->hooked->address),
+				reinterpret_cast<PUINT64>(&g_Globals->internal.IopXxxControlFile)
+			);
+			if (!NT_SUCCESS(Status) || g_Globals->internal.IopXxxControlFile == NULL)
+			{
+				LOG_ERR("[%ws::%d] %p was not found.\n", __FUNCTIONW__, __LINE__, g_Globals->internal.IopXxxControlFile);
+				Status = STATUS_NOT_FOUND;
+				break;
+			}
+
+			fn_hSyscall = reinterpret_cast<UINT64>(fn_hNtDeviceIoControlFile);
+
+			//
+			// Copy enough memory of the function to restore afterwards. 
+			//
+			RtlCopyMemory(
+				g_Globals->hooked->original,
+				g_Globals->hooked->address,
+				sizeof(g_Globals->hooked->original)
+			);
+
+			//
+			// Patch the temp bytes that way RAX points to something useful.
+			// 
+			RtlCopyMemory(HookingStub + 2, &fn_hSyscall, sizeof(fn_hSyscall));
+
+			Status = detour::hook(reinterpret_cast<PVOID>(fnSyscall), HookingStub, sizeof(HookingStub));
+			if (!NT_SUCCESS(Status))
+			{
+				LOG_ERR("[%ws::%d] Failed with status 0x%08x.\n", __FUNCTIONW__, __LINE__, Status);
+				break;
+			}
+			else
+			{
+				g_Globals->hooked->IsHooked = true;
+			}
+
+			//
+			// Keep track of the functions that are hooked. Insert dem hoes into
+			// the list entry. 
+			// 
+			ExInterlockedInsertTailList(
+				&g_Globals->ListHead,
+				&g_Globals->hooked->entry,
+				&g_Globals->kInterlockedSpinLock
+			);
+
+			LOG_TRACE("[%ws::%d] NtDeviceIoControlFile has been hooked.\n", __FUNCTIONW__, __LINE__);
+		}
+		break;
+	default:
+		Status = STATUS_NOT_IMPLEMENTED;
+		break;
+	}
+
+	return Status;
 }
 
-NTSTATUS unhookSyscall(PIRP Irp)
+_Use_decl_annotations_
+NTSTATUS
+UnhookSyscall(
+	PINPUT_BUFFER InputBuffer
+)
 {
-    PINPUT_BUFFER pUsermodeBuffer = nullptr;
+	//
+	// Validate the user's provided syscall.
+	//
+	if (InputBuffer->syscall > g_Globals->ssdt->NumberOfServices ||
+		InputBuffer->syscall < 0)
+	{
+		return STATUS_INVALID_PARAMETER;
+	}
 
-    ///
-    /// Sanity check
-    /// 
-    if (Irp)
-    {
-        __try
-        {
-            pUsermodeBuffer = static_cast<PINPUT_BUFFER>(
-                Irp->AssociatedIrp.SystemBuffer
-                );
-        }
-        __except (EXCEPTION_EXECUTE_HANDLER)
-        {
-            DbgPrint("[%ws::%d] Access violation occured.\n", __FUNCTIONW__, __LINE__);
-            return STATUS_ACCESS_VIOLATION;
-        }
-    }
-    else
-    {
-        DbgPrint("[%ws::%d] Received a null irp.\n", __FUNCTIONW__, __LINE__);
-        return STATUS_IO_DEVICE_ERROR;
-    }
-
-    ///
-    /// Validate the user's input
-    /// 
-    if (pUsermodeBuffer->syscall > g_Globals->ssdt->NumberOfServices ||
-        pUsermodeBuffer->syscall < 0
-        )
-    {
-        DbgPrint("[%ws::%d] %d is not a valid index.\n", __FUNCTIONW__, __LINE__, pUsermodeBuffer->syscall);
-        return STATUS_INVALID_PARAMETER;
-    }
-
-    return hook::unhookFunction(pUsermodeBuffer->syscall);
+	return hook::unhookFunction(InputBuffer->syscall);
 }
+
+
+/// EOF
