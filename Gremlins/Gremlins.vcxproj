@@ -199,6 +199,7 @@
     <ClCompile Include="Source.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AuxTypes.h" />
     <ClInclude Include="AuxWrapper.h" />
     <ClInclude Include="detour.h" />
     <ClInclude Include="dispatchfunctions.h" />
