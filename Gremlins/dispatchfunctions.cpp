@@ -33,7 +33,6 @@ InitializeModule()
 	}
 	else
 	{
-		//KdPrint(("[%ws::%d] KiSystemServiceUser: %p\n", __FUNCTIONW__, __LINE__, KiSystemServiceuser));
 		LOG_TRACE("[%ws::%d] KiSystemServiceUser: %p.\n", __FUNCTIONW__, __LINE__, KiSystemServiceuser);
 	}
 

@@ -54,15 +54,12 @@ main(
 
 	std::vector<std::string> HookThese{};
 	std::vector<std::string> UnhookThese{};
+	INPUT_BUFFER lpInputBuffer{};
 
 	BOOL bIsKdAttached = FALSE;
 
 	PSYSTEM_KERNEL_DEBUGGER_INFORMATION pIsKdAttached = nullptr;
-	PINPUT_BUFFER lpInputBuffer = nullptr;
 
-	//pGizmo = std::make_unique<Gizmo>();
-
-	//std::wcout << banner << std::endl;
 	PrintBanner();
 
 	std::vector<std::string> args(&argv[0], &argv[argc]);
@@ -174,23 +171,14 @@ main(
 
 	if (!HookThese.empty())
 	{
-		lpInputBuffer = new INPUT_BUFFER();
-		if (lpInputBuffer == nullptr)
-		{
-			//
-			// We shouldn't be in here but whatevs. Just in case.
-			//
-			return EXIT_FAILURE;
-		}
-
 		for (const std::string& i : HookThese)
 		{
-			RtlSecureZeroMemory(lpInputBuffer, sizeof(INPUT_BUFFER));
+			RtlSecureZeroMemory(&lpInputBuffer, sizeof(lpInputBuffer));
 
 			std::wcout << "[+] Hooking " << i.c_str() << "...";
-			if (pGizmo->IsSyscallHooked(i.c_str(), lpInputBuffer) && !lpInputBuffer->status)
+			if (pGizmo->IsSyscallHooked(i.c_str(), &lpInputBuffer) && !lpInputBuffer.status)
 			{
-				if (!pGizmo->HookSyscall(lpInputBuffer))
+				if (!pGizmo->HookSyscall(&lpInputBuffer))
 				{
 					std::wcerr << "uh-oh!" << std::endl;
 					std::wcerr << "[!] Unable to hook syscall " << i.c_str() << std::endl;
@@ -210,23 +198,14 @@ main(
 
 	if (!UnhookThese.empty())
 	{
-		lpInputBuffer = new INPUT_BUFFER();
-		if (lpInputBuffer == nullptr)
-		{
-			//
-			// We shouldn't be in here but whatevs. Just in case.
-			//
-			return EXIT_FAILURE;
-		}
-
 		for (const std::string& i : UnhookThese)
 		{
-			RtlSecureZeroMemory(lpInputBuffer, sizeof(INPUT_BUFFER));
+			RtlSecureZeroMemory(&lpInputBuffer, sizeof(lpInputBuffer));
 
 			std::wcout << "[+] Restoring " << i.c_str() << "...";
-			if (pGizmo->IsSyscallHooked(i.c_str(), lpInputBuffer) && lpInputBuffer->status)
+			if (pGizmo->IsSyscallHooked(i.c_str(), &lpInputBuffer) && lpInputBuffer.status)
 			{
-				if (!pGizmo->UnhookSyscall(lpInputBuffer))
+				if (!pGizmo->UnhookSyscall(&lpInputBuffer))
 				{
 					std::wcerr << "uh-oh!" << std::endl;
 					std::wcerr << "[!] Unable to hook syscall " << i.c_str() << std::endl;

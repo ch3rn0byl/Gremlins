@@ -137,5 +137,8 @@
     <ClInclude Include="ntcreatefiletypes.h">
       <Filter>Source Files\Hooks\Hook Types</Filter>
     </ClInclude>
+    <ClInclude Include="AuxTypes.h">
+      <Filter>Header Files\Types</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -38,7 +38,7 @@ public:
 	/// <returns>true. If this method fails, reference GetLastError().</returns>
 	bool IsSyscallHooked(
 		_In_z_ LPCSTR lpProcName, 
-		_Inout_ PINPUT_BUFFER& lpInputBuffer
+		_Inout_ PINPUT_BUFFER lpInputBuffer
 	);
 
 	/// <summary>

@@ -97,7 +97,7 @@ _Use_decl_annotations_
 bool 
 Gizmo::IsSyscallHooked(
     LPCSTR lpProcName, 
-    PINPUT_BUFFER& lpInputBuffer
+    PINPUT_BUFFER lpInputBuffer
 )
 {
     //
