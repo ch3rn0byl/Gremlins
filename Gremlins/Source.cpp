@@ -13,7 +13,7 @@ void banner()
 	//
 	// Using LOG_ERR because it prints regardless of what flag you specify.
 	//
-	LOG_ERR("                                      @                                      \n", NULL);
+	LOG_ERR("\n                                      @                                      \n", NULL);
 	LOG_ERR("   ,***((****((((*               @@@@@@@@@@@               ,****,,,,**,,,.   \n", NULL);
 	LOG_ERR("****(############**(((         @@@@@@@@@@@@@@@        .***,,((((((((((((/,,,,\n", NULL);
 	LOG_ERR("    #################************,@@@@@@@@@,,,,,,,,,,,,*(((((((((((((((((    \n", NULL);
@@ -30,7 +30,7 @@ void banner()
 	LOG_ERR("                ,,,,,,,,,,,,#######***.,,,(((((((............                \n", NULL);
 	LOG_ERR("                      , ,,,,##########(((((((((((.... .                      \n", NULL);
 	LOG_ERR("                                ########(((((*                               \n", NULL);
-	LOG_ERR("                         Gremlins: A Syscall Fuzzer                          \n", NULL);
+	LOG_ERR("                         Gremlins: A Syscall Fuzzer                          \n\n", NULL);
 }
 
 _Function_class_(DRIVER_DISPATCH)

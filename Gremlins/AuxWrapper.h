@@ -1,14 +1,17 @@
 #pragma once
 #include <ntddk.h>
 #include <aux_klib.h>
-
-#define AUX_POOLTAG_DBG	'dWxA'
-#define AUX_POOLTAG		'rGxA'
+#include "AuxTypes.h"
 
 class AuxWrapper
 {
 public:
 	AuxWrapper();
+
+	/// <summary>
+	/// The deconstructor is responsible for cleaning up and deallocating
+	/// memory.
+	/// </summary>
 	~AuxWrapper();
 
 protected:

@@ -169,8 +169,15 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <WarningLevel>Level4</WarningLevel>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <DisableSpecificWarnings>5040;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4201;4748;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
+    <Link>
+      <AdditionalDependencies>Aux_Klib.lib;%(AdditionalDependencies);$(KernelBufferOverflowLib);$(DDK_LIB_PATH)ntoskrnl.lib;$(DDK_LIB_PATH)hal.lib;$(DDK_LIB_PATH)wmilib.lib</AdditionalDependencies>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+    </Link>
+    <DriverSign>
+      <FileDigestAlgorithm>SHA256</FileDigestAlgorithm>
+    </DriverSign>
   </ItemDefinitionGroup>
   <ItemGroup>
     <Inf Include="Gremlins.inf" />
@@ -195,6 +202,7 @@
     <ClInclude Include="AuxWrapper.h" />
     <ClInclude Include="detour.h" />
     <ClInclude Include="dispatchfunctions.h" />
+    <ClInclude Include="ntcreatefiletypes.h" />
     <ClInclude Include="typesndefs.h" />
     <ClInclude Include="hook.h" />
     <ClInclude Include="kutypes.h" />
