@@ -1,35 +1,28 @@
+// ServiceController.h : WIP MAY NOT GET USED AND WILL GET DELETED IF NOT!!
+//
 #pragma once
 #include <Windows.h>
+#include <stdexcept>
 
-constexpr auto wszServiceName = L"Gremlins";
+#include "ErrorHandler.h"
 
 class ServiceController
 {
-private:
-    SC_HANDLE schSCManager;
-    SC_HANDLE schService;
-
-    bool bStatus;
-    bool bDoesServiceExist;
-
-    /// <summary>
-    /// This private method will unregister the services created
-    /// and delete the driver that was dumped to disk.
-    /// </summary>
-    void ServiceCleanUp();
-
 public:
     ServiceController();
     ~ServiceController();
 
-    bool IsServiceRunning();
+    BOOL IsServiceRunning();
+    BOOL StartKernelService();
 
-    /// <summary>
-    /// This method will create a service on the machine and 
-    /// start the driver.
-    /// </summary>
-    /// <returns>true if successful</returns>
-    bool StartKernelService();
+private:
+    std::unique_ptr<ErrorHandler> m_pError;
+    const wchar_t* m_wszServiceName;
+    SC_HANDLE m_schSCManager;
+    SC_HANDLE m_schService;
+    BOOL m_bDoesServiceExist;
+
+    void ServiceCleanUp();
 };
 
 

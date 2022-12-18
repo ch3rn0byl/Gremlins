@@ -44,12 +44,6 @@
     <ClInclude Include="types.h">
       <Filter>Header Files\Types</Filter>
     </ClInclude>
-    <ClInclude Include="banner.h">
-      <Filter>Header Files\Types</Filter>
-    </ClInclude>
-    <ClInclude Include="undocumented.h">
-      <Filter>Header Files\Types</Filter>
-    </ClInclude>
     <ClInclude Include="BaseDriverclient.h">
       <Filter>Header Files\Classes</Filter>
     </ClInclude>
@@ -61,6 +55,15 @@
     </ClInclude>
     <ClInclude Include="Gizmo.h">
       <Filter>Header Files\Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="DllHelper.h">
+      <Filter>Header Files\Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="NtUndoc.h">
+      <Filter>Header Files\Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="NtUndocTypes.h">
+      <Filter>Header Files\Types</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

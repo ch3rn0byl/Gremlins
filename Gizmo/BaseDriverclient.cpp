@@ -28,6 +28,7 @@ BOOL BaseDriverClient::init(const wchar_t* testing)
 	);
 	if (m_hFileHandle == INVALID_HANDLE_VALUE)
 	{
+		m_pErro = std::make_unique<ErrorHandler>(GetLastError());
 		return FALSE;
 	}
 	return TRUE;

@@ -1,5 +1,5 @@
 #include "ServiceController.h"
-#include <iostream> // delete me
+
 void ServiceController::ServiceCleanUp()
 {
 	SERVICE_STATUS_PROCESS ssp = { 0 };
@@ -14,25 +14,25 @@ void ServiceController::ServiceCleanUp()
 	// if the service handle is not populated, open a handle to the
 	// service with delete, query, and stopping rights.
 	// 
-	if (schSCManager != NULL && schService == NULL)
+	if (m_schSCManager != NULL && m_schService == NULL)
 	{
-		schService = OpenService(
-			schSCManager,
-			wszServiceName,
+		m_schService = OpenService(
+			m_schSCManager,
+			m_wszServiceName,
 			DELETE |
 			SERVICE_QUERY_STATUS |
 			SERVICE_STOP
 		);
 	}
 
-	if (schSCManager != NULL && schService != NULL)
+	if (m_schSCManager != NULL && m_schService != NULL)
 	{
 		//
 		// Check to see if the service is up and running. If so, 
 		// send the signal to stop it.
 		// 
 		bStatus = ControlService(
-			schService,
+			m_schService,
 			SERVICE_CONTROL_STOP,
 			reinterpret_cast<LPSERVICE_STATUS>(&ssp)
 		);
@@ -53,7 +53,7 @@ void ServiceController::ServiceCleanUp()
 					Sleep(ssp.dwWaitHint);
 
 					bStatus = QueryServiceStatusEx(
-						schService,
+						m_schService,
 						SC_STATUS_PROCESS_INFO,
 						reinterpret_cast<LPBYTE>(&ssp),
 						sizeof(SERVICE_STATUS_PROCESS),
@@ -61,8 +61,8 @@ void ServiceController::ServiceCleanUp()
 					);
 					if (!bStatus)
 					{
-						// handle it
-						std::wcout << __FUNCTIONW__ << ":" << __LINE__ << std::endl;
+						m_pError = std::make_unique<ErrorHandler>(GetLastError());
+						throw std::runtime_error(m_pError->GetLastErrorAsStringA());
 					}
 				}
 			}
@@ -83,24 +83,24 @@ void ServiceController::ServiceCleanUp()
 	}
 }
 
-ServiceController::ServiceController()
+ServiceController::ServiceController() : 
+	m_pError(nullptr),
+	m_wszServiceName(L"Gremlins"),
+	m_schSCManager(NULL),
+	m_schService(NULL),
+	m_bDoesServiceExist(TRUE)
 {
-	schSCManager = NULL;
-	schService = NULL;
-
-	bStatus = false;
-	bDoesServiceExist = true;
-
 	//
 	// Grab a handle to the service controller manager.
 	//
-	schSCManager = OpenSCManager(
+	m_schSCManager = OpenSCManager(
 		NULL, NULL,
 		SC_MANAGER_ALL_ACCESS
 	);
-	if (schSCManager != NULL)
+	if (m_schSCManager == NULL)
 	{
-		bStatus = true;
+		m_pError = std::make_unique<ErrorHandler>(GetLastError());
+		throw std::runtime_error(m_pError->GetLastErrorAsStringA());
 	}
 }
 
@@ -114,58 +114,58 @@ ServiceController::~ServiceController()
 	ServiceCleanUp();
 	*/
 
-	if (schService != NULL)
+	if (m_schService != NULL)
 	{
-		CloseServiceHandle(schService);
-		schService = NULL;
+		CloseServiceHandle(m_schService);
+		m_schService = NULL;
 	}
 
-	if (schSCManager != NULL)
+	if (m_schSCManager != NULL)
 	{
-		CloseServiceHandle(schSCManager);
-		schSCManager = NULL;
+		CloseServiceHandle(m_schSCManager);
+		m_schSCManager = NULL;
 	}
 }
 
-bool ServiceController::IsServiceRunning()
+BOOL ServiceController::IsServiceRunning()
 {
 	SERVICE_STATUS Status = { 0 };
 
-	schService = OpenService(schSCManager, wszServiceName, SC_MANAGER_ALL_ACCESS);
-	if (schService == NULL)
+	m_schService = OpenService(m_schSCManager, m_wszServiceName, SC_MANAGER_ALL_ACCESS);
+	if (m_schService == NULL)
 	{
 		if (GetLastError() == ERROR_SERVICE_DOES_NOT_EXIST)
 		{
-			bDoesServiceExist = false;
+			m_bDoesServiceExist = FALSE;
 		}
 
-		return false;
+		return FALSE;
 	}
 
-	if (!QueryServiceStatus(schService, &Status))
+	if (!QueryServiceStatus(m_schService, &Status))
 	{
-		return false;
+		return FALSE;
 	}
 
 	if (Status.dwCurrentState == SERVICE_RUNNING)
 	{
-		return true;
+		return TRUE;
 	}
 
-	return false;
+	return FALSE;
 }
 
-bool ServiceController::StartKernelService()
+BOOL ServiceController::StartKernelService()
 {
 	// 
 	// Check if the service exists. If it doesn't, create dat hoe.
 	//
-	if (!bDoesServiceExist)
+	if (!m_bDoesServiceExist)
 	{
-		schService = CreateService(
-			schSCManager,
-			wszServiceName,
-			wszServiceName,
+		m_schService = CreateService(
+			m_schSCManager,
+			m_wszServiceName,
+			m_wszServiceName,
 			GENERIC_EXECUTE | DELETE,
 			SERVICE_KERNEL_DRIVER,
 			SERVICE_DEMAND_START,
@@ -173,27 +173,27 @@ bool ServiceController::StartKernelService()
 			L"C:\\Users\\offensive\\Desktop\\Gremlins.sys", // TODO: dynamically fix dis hoe.
 			NULL, NULL, NULL, NULL, NULL
 		);
-		if (schService == NULL)
+		if (m_schService == NULL)
 		{
-			return false;
+			return FALSE;
 		}
 	}
 	else
 	{
-		schService = OpenService(schSCManager, wszServiceName, SC_MANAGER_ALL_ACCESS);
-		if (schService == NULL)
+		m_schService = OpenService(m_schSCManager, m_wszServiceName, SC_MANAGER_ALL_ACCESS);
+		if (m_schService == NULL)
 		{
-			return false;
+			return FALSE;
 		}
 	}
 
 
-	if (!StartService(schService, NULL, NULL))
+	if (!StartService(m_schService, NULL, NULL))
 	{
-		return false;
+		return FALSE;
 	}
 
-	return true;
+	return TRUE;
 }
 
 

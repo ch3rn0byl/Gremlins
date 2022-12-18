@@ -6,10 +6,7 @@
 #include <string>
 #include <vector>
 
-#include "undocumented.h"
-#include "banner.h"
-
-#include "ServiceController.h"
+//#include "ServiceController.h"
 #include "Gizmo.h"
 
 void
@@ -32,46 +29,19 @@ PrintUsage(
 	std::wcout << std::endl;
 }
 
-template <typename T>
-T GetKdInformation(
-	SYSTEM_INFORMATION_CLASS InformationClass
-)
+void 
+PrintBanner()
 {
-	ULONG SystemInformationLength = 0;
-	T SystemInformationReturn = nullptr;
-
-	GET_NATIVE(NtQuerySystemInformation);
-
-	NTSTATUS Status = STATUS_UNSUCCESSFUL;
-
-	do
-	{
-		T SystemInformation = reinterpret_cast<T>(
-			new BYTE[SystemInformationLength]()
-			);
-
-		Status = f_NtQuerySystemInformation(
-			InformationClass,
-			SystemInformation,
-			SystemInformationLength,
-			&SystemInformationLength
-		);
-		if (!NT_SUCCESS(Status) && Status == STATUS_INFO_LENGTH_MISMATCH)
-		{
-			if (SystemInformation != nullptr)
-			{
-				delete[] SystemInformation;
-				SystemInformation = nullptr;
-			}
-		}
-		else
-		{
-			SystemInformationReturn = reinterpret_cast<T>(SystemInformation);
-			break;
-		}
-	} while (Status != STATUS_SUCCESS);
-
-	return SystemInformationReturn;
+	std::wcout << std::endl;
+	std::wcout << "      ,--,   ,---.    ,---.          ,-.    ,-..-. .-.   .---. " << std::endl;
+	std::wcout << "    .' .'    | .-.\\   | .-'  |\\    /|| |    |(||  \\| |  ( .-._)" << std::endl;
+	std::wcout << "    |  |  __ | `-'/   | `-.  |(\\  / || |    (_)|   | | (_) \\   " << std::endl;
+	std::wcout << "    \\  \\ ( _)|   (    | .-'  (_)\\/  || |    | || |\\  | _  \\ \\  " << std::endl;
+	std::wcout << "     \\  `-) )| |\\ \\   |  `--.| \\  / || `--. | || | |)|( `-'  ) " << std::endl;
+	std::wcout << "     )\\____/ |_| \\)\\  /( __.'| |\\/| ||( __.'`-'/(  (_) `----'  " << std::endl;
+	std::wcout << "    (__)         (__)(__)    '-'  '-'(_)      (__)             " << std::endl;
+	std::wcout << "                                   A Syscall Introspection Tool" << std::endl;
+	std::wcout << std::endl;
 }
 
 int
@@ -85,17 +55,20 @@ main(
 	std::vector<std::string> HookThese{};
 	std::vector<std::string> UnhookThese{};
 
+	BOOL bIsKdAttached = FALSE;
+
 	PSYSTEM_KERNEL_DEBUGGER_INFORMATION pIsKdAttached = nullptr;
 	PINPUT_BUFFER lpInputBuffer = nullptr;
 
-	pGizmo = std::make_unique<Gizmo>();
+	//pGizmo = std::make_unique<Gizmo>();
 
-	std::wcout << banner << std::endl;
+	//std::wcout << banner << std::endl;
+	PrintBanner();
 
 	std::vector<std::string> args(&argv[0], &argv[argc]);
 
 	//
-	// Iterate through all the arguments. 
+	// Process the arguments given. 
 	//
 	for (std::vector<std::string>::iterator i = args.begin(); i != args.end(); i++)
 	{
@@ -159,33 +132,33 @@ main(
 	}
 
 	//
-	// Ensure the target is attached to a kernel debugger. Pause and wait for it
-	// to be attached.
-	// 
+	// Now start initializing and interacting with Gremlins.
+	//
+	try
+	{
+		pGizmo = std::make_unique<Gizmo>();
+	}
+	catch (const std::exception&e)
+	{
+		std::wcerr << "[!] " << e.what() << std::endl;
+		return EXIT_FAILURE;
+	}
+	
+	//
+	// Ensure the target is attached to a kernel debugger. Pause and wait for it to 
+	// be attached otherwise data that is intended on being displayed will not show.
+	//
 	do
 	{
-		pIsKdAttached = GetKdInformation<PSYSTEM_KERNEL_DEBUGGER_INFORMATION>(
-			SystemKernelDebuggerInformation
-			);
-		if (pIsKdAttached != nullptr)
+		bIsKdAttached = pGizmo->IsBeingKernelDebugged();
+		if (!bIsKdAttached)
 		{
-			if (!pIsKdAttached->DebuggerEnabled || pIsKdAttached->DebuggerNotPresent)
-			{
-				std::wcerr << "[!] Not connected to a kernel debugger!" << std::endl;
-				system("pause");
-			}
-			else
-			{
-				break;
-			}
+			std::wcerr << "[!] Not attached to a kernel debugger. Waiting..." << std::endl;
+			system("pause");
 		}
-		else
-		{
-			std::wcerr << "[!] Unable to retrieve debugging status." << std::endl;
-			return EXIT_FAILURE;
-		}
-	} while (true);
-
+	} while (!bIsKdAttached);
+	
+	/*
 	//
 	// The kernel debugger should be attached at this point. Start the driver up.
 	// 
@@ -197,12 +170,7 @@ main(
 			return EXIT_FAILURE;
 		}
 	}
-
-	if (!pGizmo->Init())
-	{
-		std::wcerr << "[!] Unable to initialize gremlins." << std::endl;
-		return EXIT_FAILURE;
-	}
+	*/
 
 	if (!HookThese.empty())
 	{
@@ -274,12 +242,6 @@ main(
 				std::wcerr << "[!] " << i.c_str() << " is not hooked." << std::endl;
 			}
 		}
-	}
-
-	if (pIsKdAttached != nullptr)
-	{
-		delete pIsKdAttached;
-		pIsKdAttached = nullptr;
 	}
 
 	std::wcout << "[+] Done." << std::endl;

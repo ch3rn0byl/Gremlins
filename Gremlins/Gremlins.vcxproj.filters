@@ -44,6 +44,12 @@
     <Filter Include="Header Files\Classes">
       <UniqueIdentifier>{0513ec47-cd02-4f4b-a987-cb71fcd11f1d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Hooks\Hook Types">
+      <UniqueIdentifier>{720d2564-128a-437f-bc7c-a9de5b1d4e1b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Hooks\Syscall Hooks">
+      <UniqueIdentifier>{6cfb5422-5322-486d-b71a-d1b27d2a8ff7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Inf Include="Gremlins.inf">
@@ -56,12 +62,6 @@
     </ClCompile>
     <ClCompile Include="resolve.cpp">
       <Filter>Source Files\Namespaces</Filter>
-    </ClCompile>
-    <ClCompile Include="ntcreatefile.cpp">
-      <Filter>Source Files\Hooks</Filter>
-    </ClCompile>
-    <ClCompile Include="ntdeviceiocontrolfile.cpp">
-      <Filter>Source Files\Hooks</Filter>
     </ClCompile>
     <ClCompile Include="dispatchfunctions.cpp">
       <Filter>Source Files\Main driver functions</Filter>
@@ -83,6 +83,12 @@
     </ClCompile>
     <ClCompile Include="ProcessHandle.cpp">
       <Filter>Source Files\Classes</Filter>
+    </ClCompile>
+    <ClCompile Include="ntcreatefile.cpp">
+      <Filter>Source Files\Hooks\Syscall Hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="ntdeviceiocontrolfile.cpp">
+      <Filter>Source Files\Hooks\Syscall Hooks</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -127,6 +133,9 @@
     </ClInclude>
     <ClInclude Include="typesndefs.h">
       <Filter>Header Files\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="ntcreatefiletypes.h">
+      <Filter>Source Files\Hooks\Hook Types</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
