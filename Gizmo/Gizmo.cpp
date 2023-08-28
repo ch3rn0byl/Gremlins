@@ -1,23 +1,16 @@
 #include "Gizmo.h"
 
 Gizmo::Gizmo() :
+    BaseDriverClient(L"\\\\.\\Gremlins"),
     m_pNtUndoc(std::make_unique<NtUndoc>()),
-    m_wszServiceName(L"\\\\.\\Gremlins"),
     m_pError(nullptr)
 {
     INPUT_BUFFER lpInputBuffer = {};
 
-    bool bStatus = init(m_wszServiceName);
-    if (!bStatus)
-    {
-        m_pError = std::make_unique<ErrorHandler>(GetLastError());
-        throw std::runtime_error(m_pError->GetLastErrorAsStringA());
-    }
-
     //
     // Check if Gremlins has been initialized. If it hasn't, do the damn thang.
     //
-    bStatus = SendIoControlRequest(
+    BOOL bStatus = SendIoControlRequest(
         IsInitialized, 
         &lpInputBuffer, 
         sizeof(lpInputBuffer), 

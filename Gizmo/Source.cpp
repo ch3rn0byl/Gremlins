@@ -169,6 +169,12 @@ main(
 	}
 	*/
 
+	//
+	// TODO: Use an INI file to store information on what to monitor and what not to.
+	//
+
+
+
 	if (!HookThese.empty())
 	{
 		for (const std::string& i : HookThese)

@@ -1,23 +1,19 @@
-// BaseDriverClient.h : This file is the base class for all driver interactions. Used by Gizmo.h.
+// BaseDriverClient.h : This file is the base class for all driver interactions. Used by Zemana.h.
 //
 #pragma once
 #include <Windows.h>
+#include <stdexcept>
+
 #include "ErrorHandler.h"
 
 class BaseDriverClient
 {
 public:
+	BaseDriverClient(_In_z_ LPCWSTR lpFileName);
 	BaseDriverClient();
 	~BaseDriverClient();
 
 protected:
-	/// <summary>
-	/// This method is a wrapper around CreateFileW.
-	/// </summary>
-	/// <param name="testing"></param>
-	/// <returns>TRUE. If this method fails, reference GetLastError().</returns>
-	BOOL init(const wchar_t* testing);
-
 	/// <summary>
 	/// This method is a wrapper for DeviceIoControlFile.
 	/// </summary>
@@ -27,7 +23,7 @@ protected:
 	/// <param name="lpOutBuffer"></param>
 	/// <param name="dwOutBufferSize"></param>
 	/// <param name="lpBytesReturned"></param>
-	/// <returns>true. If this method fails, reference GetLastError().</returns>
+	/// <returns>TRUE. If this method fails, reference GetLastError().</returns>
 	BOOL SendIoControlRequest(
 		_In_ DWORD dwIoControlCode,
 		_In_reads_bytes_opt_(dwInBufferSize) LPVOID lpInBuffer = nullptr,

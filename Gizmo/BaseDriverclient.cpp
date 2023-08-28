@@ -1,9 +1,32 @@
 #include "BaseDriverClient.h"
 
+_Use_decl_annotations_
+BaseDriverClient::BaseDriverClient(LPCWSTR lpFileName) :
+	m_hFileHandle(INVALID_HANDLE_VALUE),
+	m_pErro(nullptr)
+{
+	m_hFileHandle = CreateFile(
+		lpFileName,
+		GENERIC_READ | GENERIC_WRITE,
+		FILE_SHARE_READ | FILE_SHARE_WRITE,
+		NULL,
+		OPEN_EXISTING,
+		FILE_ATTRIBUTE_NORMAL,
+		NULL
+	);
+	if (m_hFileHandle == INVALID_HANDLE_VALUE)
+	{
+		m_pErro = std::make_unique<ErrorHandler>(GetLastError());
+
+		throw std::runtime_error(m_pErro->GetLastErrorAsStringA().c_str());
+	}
+}
+
 BaseDriverClient::BaseDriverClient() :
 	m_hFileHandle(INVALID_HANDLE_VALUE),
 	m_pErro(nullptr)
 {
+	throw std::runtime_error("A device name was not provided.");
 }
 
 BaseDriverClient::~BaseDriverClient()
@@ -15,28 +38,8 @@ BaseDriverClient::~BaseDriverClient()
 	}
 }
 
-BOOL BaseDriverClient::init(const wchar_t* testing)
-{
-	m_hFileHandle = CreateFile(
-		testing,
-		GENERIC_READ | GENERIC_WRITE,
-		FILE_SHARE_READ | FILE_SHARE_WRITE,
-		NULL,
-		OPEN_EXISTING,
-		FILE_ATTRIBUTE_NORMAL,
-		NULL
-	);
-	if (m_hFileHandle == INVALID_HANDLE_VALUE)
-	{
-		m_pErro = std::make_unique<ErrorHandler>(GetLastError());
-		return FALSE;
-	}
-	return TRUE;
-}
-
 _Use_decl_annotations_
-BOOL
-BaseDriverClient::SendIoControlRequest(
+BOOL BaseDriverClient::SendIoControlRequest(
 	DWORD dwIoControlCode,
 	LPVOID lpInBuffer,
 	DWORD dwInBufferSize,
@@ -55,11 +58,6 @@ BaseDriverClient::SendIoControlRequest(
 		lpBytesReturned,
 		NULL
 	);
-	if (!bStatus)
-	{
-		m_pErro = std::make_unique<ErrorHandler>(GetLastError());
-	}
-
 	return bStatus;
 }
 
