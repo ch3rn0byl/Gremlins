@@ -254,12 +254,27 @@ typedef struct _SYSTEM_KERNEL_DEBUGGER_INFORMATION
     BOOLEAN DebuggerNotPresent;
 } SYSTEM_KERNEL_DEBUGGER_INFORMATION, * PSYSTEM_KERNEL_DEBUGGER_INFORMATION;
 
+typedef struct _UNICODE_STRING {
+    USHORT Length;
+    USHORT MaximumLength;
+#ifdef MIDL_PASS
+    [size_is(MaximumLength / 2), length_is((Length) / 2)] USHORT* Buffer;
+#else // MIDL_PASS
+    _Field_size_bytes_part_opt_(MaximumLength, Length) PWCH   Buffer;
+#endif // MIDL_PASS
+} UNICODE_STRING, *PUNICODE_STRING;
+
 typedef NTSTATUS(NTAPI* _NtQuerySystemInformation)(
     _In_ SYSTEM_INFORMATION_CLASS SystemInformationClass,
     _Out_writes_bytes_(SystemInformationLength) PVOID SystemInformation,
     _In_ ULONG SystemInformationLength,
     _Out_opt_ PULONG ReturnLength 
     );
+
+typedef VOID(NTAPI* _RtlInitUnicodeString)(
+	_Out_ PUNICODE_STRING DestinationString,
+	_In_opt_ PCWSTR SourceString 
+	);
 
 
 /// EOF

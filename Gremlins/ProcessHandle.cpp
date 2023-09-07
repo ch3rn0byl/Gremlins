@@ -85,7 +85,7 @@ NTSTATUS ProcessHandle::AnalyzeHandle()
 	{
 		return Status;
 	}
-
+	
 	//
 	// Now start pulling information from the object. The DeviceObject will be 
 	// retrieved first to read from the flags. If the device object has the flag
@@ -134,6 +134,16 @@ NTSTATUS ProcessHandle::AnalyzeHandle()
 	}
 
 	return Status;
+}
+
+PUNICODE_STRING ProcessHandle::GetDriverName()
+{
+	return &m_FileObject->DeviceObject->DriverObject->DriverName;
+}
+
+PUNICODE_STRING ProcessHandle::GetFileObjectName()
+{
+	return m_NameInformation;
 }
 
 PSECURITY_DESCRIPTOR ProcessHandle::GetFileObjectSD()

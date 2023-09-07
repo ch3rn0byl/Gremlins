@@ -4,6 +4,7 @@
 #include "typesndefs.h"
 #include "resolve.h"
 #include "hook.h"
+#include "exclusions.h"
 #include "ntdeviceiocontrolfile.h"
 
 NTSTATUS
@@ -29,6 +30,16 @@ HookSyscall(
 NTSTATUS
 UnhookSyscall(
 	_In_ PINPUT_BUFFER InputBuffer
+);
+
+NTSTATUS
+ExcludeDriver(
+	_In_ PVOID InputBuffer
+);
+
+NTSTATUS
+AnalyzeImage(
+	_In_ PVOID InputBuffer
 );
 
 

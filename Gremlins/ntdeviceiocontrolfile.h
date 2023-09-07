@@ -3,6 +3,7 @@
 #include "ProcessHandle.h"
 #include "Leaks.h"
 #include "privileges.h"
+#include "exclusions.h"
 
 EXTERN_C
 NTSTATUS

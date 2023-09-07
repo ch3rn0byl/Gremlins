@@ -41,7 +41,9 @@ enum IOCTL_FUNCTION : INT32
     Initialize = ENCODE_CTL(0x801),
     IsHooked = ENCODE_CTL(0x802),
     Hook = ENCODE_CTL(0x803),
-    Unhook = ENCODE_CTL(0x804)
+    Unhook = ENCODE_CTL(0x804),
+    ExcludeDriver = ENCODE_CTL(0x805),
+    ImageAnalysisIoctl = ENCODE_CTL(0x806)
 };
 
 typedef struct _INPUT_BUFFER

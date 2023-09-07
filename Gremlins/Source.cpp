@@ -62,20 +62,26 @@ DriverDispatchRoutine(
 
 	switch (IoControlCode)
 	{
-	case IsInitialized:
+	case IsInitializedIoctl:
 		Status = IsModuleInitialized(InputBuffer, &Information);
 		break;
-	case Initialize:
+	case InitializeIoctl:
 		Status = InitializeModule();
 		break;
-	case IsHooked:
+	case IsHookedIoctl:
 		Status = IsSyscallHooked(InputBuffer, &Information);
 		break;
-	case Hook:
+	case HookIoctl:
 		Status = HookSyscall(InputBuffer);
 		break;
-	case Unhook:
+	case UnhookIoctl:
 		Status = UnhookSyscall(InputBuffer);
+		break;
+	case ExcludeDriverIoctl:
+		Status = ExcludeDriver(InputBuffer);
+		break;
+	case ImageAnalysisIoctl:
+		Status = AnalyzeImage(InputBuffer);
 		break;
 	default:
 		break;
@@ -86,7 +92,7 @@ DriverDispatchRoutine(
 
 	IofCompleteRequest(Irp, IO_NO_INCREMENT);
 
-	return STATUS_SUCCESS;
+	return Status;
 }
 
 _Function_class_(DRIVER_DISPATCH)
@@ -114,6 +120,12 @@ DriverUnload(
 	_In_ PDRIVER_OBJECT DriverObject
 )
 {
+	//
+	// Iterate through all the linked lists and free the memory.
+	//
+	//hook::cleanup();
+	//exclusions::cleanup();
+
 	//
 	// If g_Globals isn't empty, clear it and release the pool.
 	//
@@ -177,7 +189,13 @@ DriverEntry(
 	KeInitializeSpinLock(&g_Globals->kInterlockedSpinLock);
 
 	ExInitializeFastMutex(&g_Globals->fMutex);
-	InitializeListHead(&g_Globals->ListHead);
+
+	InitializeListHead(&g_Globals->HookedListHead);
+	InitializeListHead(&g_Globals->ExcludeDriverListHead);
+	InitializeListHead(&g_Globals->AnalyzeKernelImageListHead);
+
+	// TODO: Register a process callback to detect processes that contain "gremlins" or if the process is blacklisted.
+	//Status = PsSetCreateProcessNotifyRoutine()
 
 	Status = IoCreateDevice(
 		DriverObject,
@@ -217,8 +235,8 @@ DriverEntry(
 	DeviceObject->Flags |= DO_BUFFERED_IO;
 
 	DriverObject->DriverUnload = DriverUnload;
-	DriverObject->MajorFunction[IRP_MJ_CREATE] =
-		DriverObject->MajorFunction[IRP_MJ_CLOSE] = DriverCreateClose;
+	DriverObject->MajorFunction[IRP_MJ_CREATE] = DriverCreateClose;
+	DriverObject->MajorFunction[IRP_MJ_CLOSE] = DriverCreateClose;
 	DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL] = DriverDispatchRoutine;
 
 	LOG_TRACE("[%ws::%d] Completed successfully.\n", __FUNCTIONW__, __LINE__);

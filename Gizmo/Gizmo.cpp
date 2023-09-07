@@ -150,6 +150,30 @@ Gizmo::UnhookSyscall(
     return bStatus;
 }
 
+_Use_decl_annotations_
+bool Gizmo::ExcludeDriverImage(PUNICODE_STRING DriverName)
+{
+    bool bStatus = SendIoControlRequest(ExcludeDriver, DriverName, sizeof(UNICODE_STRING) + DriverName->MaximumLength);
+    if (!bStatus)
+    {
+        m_pError = std::make_unique<ErrorHandler>(GetLastError());
+    }
+
+    return bStatus;
+}
+
+_Use_decl_annotations_
+bool Gizmo::AnalyzeDriverImage(PUNICODE_STRING DriverName)
+{
+    bool bStatus = SendIoControlRequest(ImageAnalysisIoctl, DriverName, sizeof(UNICODE_STRING) + DriverName->MaximumLength);
+    if (!bStatus)
+    {
+        m_pError = std::make_unique<ErrorHandler>(GetLastError());
+    }
+    std::unique_ptr<uint8_t[]> something = std::make_unique<uint8_t[]>(1024);
+    return bStatus;
+}
+
 std::wstring Gizmo::what()
 {
     return m_pError->GetLastErrorAsStringW();

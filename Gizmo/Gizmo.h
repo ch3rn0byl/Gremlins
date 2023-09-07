@@ -59,6 +59,16 @@ public:
 		_In_ PINPUT_BUFFER lpInputBuffer
 	);
 
+	// TODO: Make this method do all the work for conversion. intake the ascii version!
+	bool ExcludeDriverImage(
+		_In_ PUNICODE_STRING DriverName
+	);
+
+	// TODO: Make this method robust!
+	bool AnalyzeDriverImage(
+		_In_ PUNICODE_STRING DriverName
+	);
+
 	/// <summary>
 	/// If an error should occur, this method will return what happened
 	/// in a std::wstring format.

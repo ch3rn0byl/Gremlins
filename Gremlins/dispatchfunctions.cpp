@@ -188,7 +188,7 @@ HookSyscall(
 			// the list entry. 
 			// 
 			ExInterlockedInsertTailList(
-				&g_Globals->ListHead,
+				&g_Globals->HookedListHead,
 				&g_Globals->hooked->entry,
 				&g_Globals->kInterlockedSpinLock
 			);
@@ -220,6 +220,125 @@ UnhookSyscall(
 	}
 
 	return hook::unhookFunction(InputBuffer->syscall);
+}
+
+_Use_decl_annotations_
+NTSTATUS ExcludeDriver(PVOID InputBuffer)
+{
+	if (InputBuffer == nullptr)
+	{
+		return STATUS_INVALID_PARAMETER_1;
+	}
+
+	PUNICODE_STRING ImageName = static_cast<PUNICODE_STRING>(InputBuffer);
+
+	if (exclusions::IsKernelImageExcluded(ImageName))
+	{
+		return STATUS_ALREADY_INITIALIZED;
+	}
+
+	g_Globals->ExcludedKernelImages = static_cast<PEXCLUDED_KERNEL_IMAGE>(
+		ExAllocatePool2(POOL_FLAG_NON_PAGED, sizeof(EXCLUDED_KERNEL_IMAGE), POOLTAG)
+		);
+	if (g_Globals->ExcludedKernelImages == nullptr)
+	{
+		return STATUS_MEMORY_NOT_ALLOCATED;
+	}
+	
+	PUNICODE_STRING ExcludedImageName = static_cast<PUNICODE_STRING>(
+		ExAllocatePool2(POOL_FLAG_NON_PAGED, sizeof(UNICODE_STRING), POOLTAG)
+		);
+	if (ExcludedImageName == nullptr)
+	{
+		return STATUS_MEMORY_NOT_ALLOCATED;
+	}
+
+	ExcludedImageName->Buffer = static_cast<PWCH>(
+		ExAllocatePool2(POOL_FLAG_NON_PAGED, ImageName->MaximumLength, POOLTAG)
+		);
+	if (ExcludedImageName->Buffer == nullptr)
+	{
+		return STATUS_MEMORY_NOT_ALLOCATED;
+	}
+
+	ExcludedImageName->Length = ImageName->Length;
+	ExcludedImageName->MaximumLength = ImageName->MaximumLength;
+
+	RtlCopyUnicodeString(ExcludedImageName, ImageName);
+
+	g_Globals->ExcludedKernelImages->KernelImageName = ExcludedImageName;
+
+	ExInterlockedInsertTailList(
+		&g_Globals->ExcludeDriverListHead,
+		&g_Globals->ExcludedKernelImages->entry,
+		&g_Globals->kInterlockedSpinLock
+	);
+
+	LOG_TRACE("[%ws::%d] %wZ has been excluded.\n", __FUNCTIONW__, __LINE__, ExcludedImageName);
+
+	return STATUS_SUCCESS;
+}
+
+_Use_decl_annotations_
+NTSTATUS AnalyzeImage(PVOID InputBuffer)
+{
+	if (InputBuffer == nullptr)
+	{
+		return STATUS_INVALID_PARAMETER_1;
+	}
+
+	PUNICODE_STRING ImageName = static_cast<PUNICODE_STRING>(InputBuffer);
+	LOG_TRACE("[%ws::%d] going to attempt to insert %wZ\n", __FUNCTIONW__, __LINE__, ImageName);
+
+	if (exclusions::IsKernelImageForAnalysis(ImageName))
+	{
+		LOG_TRACE("[%ws::%d] %wZ is already being analyzed.\n", __FUNCTIONW__, __LINE__, ImageName);
+		return STATUS_ALREADY_INITIALIZED;
+	}
+
+	g_Globals->AnalyzeKernelImages = static_cast<PANALYSIS_KERNEL_IMAGE>(
+		ExAllocatePool2(POOL_FLAG_NON_PAGED, sizeof(ANALYSIS_KERNEL_IMAGE), POOLTAG)
+		);
+	if (g_Globals->AnalyzeKernelImages == nullptr)
+	{
+		return STATUS_MEMORY_NOT_ALLOCATED;
+	}
+
+	PUNICODE_STRING AnalyzeImageName = static_cast<PUNICODE_STRING>(
+		ExAllocatePool2(POOL_FLAG_NON_PAGED, sizeof(UNICODE_STRING), POOLTAG)
+		);
+	if (AnalyzeImageName == nullptr)
+	{
+		return STATUS_MEMORY_NOT_ALLOCATED;
+	}
+
+	AnalyzeImageName->Buffer = static_cast<PWCH>(
+		ExAllocatePool2(POOL_FLAG_NON_PAGED, ImageName->MaximumLength, POOLTAG)
+		);
+	if (AnalyzeImageName->Buffer == nullptr)
+	{
+		return STATUS_MEMORY_NOT_ALLOCATED;
+	}
+
+	AnalyzeImageName->Length = ImageName->Length;
+	AnalyzeImageName->MaximumLength = ImageName->MaximumLength;
+
+
+	RtlCopyUnicodeString(AnalyzeImageName, ImageName);
+
+	LOG_TRACE("[%ws::%d] Copied %wZ to %wZ\n", __FUNCTIONW__, __LINE__, ImageName, AnalyzeImageName);
+
+	g_Globals->AnalyzeKernelImages->KernelImageName = AnalyzeImageName;
+
+	ExInterlockedInsertTailList(
+		&g_Globals->AnalyzeKernelImageListHead,
+		&g_Globals->AnalyzeKernelImages->entry,
+		&g_Globals->kInterlockedSpinLock
+	);
+
+	LOG_TRACE("[%ws::%d] %wZ has been set for analysis.\n", __FUNCTIONW__, __LINE__, AnalyzeImageName);
+
+	return STATUS_SUCCESS;
 }
 
 

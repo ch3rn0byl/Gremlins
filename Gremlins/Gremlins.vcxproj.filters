@@ -90,6 +90,15 @@
     <ClCompile Include="ntdeviceiocontrolfile.cpp">
       <Filter>Source Files\Hooks\Syscall Hooks</Filter>
     </ClCompile>
+    <ClCompile Include="SpinLocked.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ProcessCallbacks.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="exclusions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="detour.h">
@@ -139,6 +148,15 @@
     </ClInclude>
     <ClInclude Include="AuxTypes.h">
       <Filter>Header Files\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="SpinLocked.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ProcessCallbacks.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="exclusions.h">
+      <Filter>Header Files\Namespaces</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

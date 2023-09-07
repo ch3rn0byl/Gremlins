@@ -11,6 +11,7 @@ private:
 
 public:
     _NtQuerySystemInformation NtQuerySystemInformation = m_dll["NtQuerySystemInformation"];
+    _RtlInitUnicodeString RtlInitUnicodeString = m_dll["RtlInitUnicodeString"];
 };
 
 

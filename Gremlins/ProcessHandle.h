@@ -5,14 +5,18 @@
 class ProcessHandle
 {
 public:
-	ProcessHandle();
-	~ProcessHandle();
-
 	ProcessHandle(
 		_In_ HANDLE hFileHandle
 	);
 
+	ProcessHandle();
+	~ProcessHandle();
+
+	
+
 	NTSTATUS AnalyzeHandle();
+	PUNICODE_STRING GetDriverName();
+	PUNICODE_STRING GetFileObjectName();
 	PSECURITY_DESCRIPTOR GetFileObjectSD();
 
 protected:
@@ -22,6 +26,7 @@ private:
 	HANDLE m_FileHandle;
 	PUNICODE_STRING m_NameInformation;
 	ULONG m_ReturnLength;
+
 };
 
 

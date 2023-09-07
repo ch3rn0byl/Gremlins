@@ -1,13 +1,15 @@
-// Source.cpp : This file contains the 'main' function. Program execution begins and ends there.
+﻿// Source.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
 #include <Windows.h>
 #include <iostream>
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <fstream>
+#include <map>
 
-//#include "ServiceController.h"
 #include "Gizmo.h"
+#include "NtUndoc.h"
 
 void
 PrintUsage(
@@ -21,26 +23,82 @@ PrintUsage(
 	std::wcout << "at a time. The syscalls are case-sensitive!" << std::endl;
 
 	std::wcout << "\nOptions: " << std::endl;
-	std::wcout << "  -h, --hook\tHooks a syscall by name." << std::endl;
-	std::wcout << "  -r, --restore\tUnhooks a syscall by name." << std::endl;
+	std::wcout << "  -h, --hook\t\tHooks a syscall by name." << std::endl;
+	std::wcout << "  -r, --restore\t\tUnhooks a syscall by name." << std::endl;
+	std::wcout << "  -d, --deny\t\tDenies problematic processes from being hooked." << std::endl;
+	std::wcout << "  -i, --initial-run\tSets up information in the kernel based on gremlins.ini." << std::endl;
 
 	std::wcout << "\nThis application will crash (hopefully) the system. A kernel debugger ";
 	std::wcout << "is required to be attached to a system to catch the crash as it occurs. ";
 	std::wcout << std::endl;
 }
 
+std::map<std::string, std::vector<std::string>> ParseIniFile(const std::string& IniFilename)
+{
+	std::ifstream IniFile(IniFilename);
+
+	if (!IniFile.is_open())
+	{
+		return {};
+	}
+
+	std::map<std::string, std::vector<std::string>> IniData;
+	std::string line;
+	std::string CurrentSection;
+
+	//
+	// Begin parsing the ini file to extract image names and what not.
+	//
+	while (std::getline(IniFile, line))
+	{
+		if (!line.empty())
+		{
+			line.erase(0, line.find_first_not_of(' '));
+			line.erase(line.find_last_not_of(' ') + 1);
+
+			//
+			// If it's commented out, ignore it. Not interested in it.
+			//
+			if (line.front() == ';')
+			{
+				continue;
+			}
+			else if (line.front() == '[' && line.back() == ']')
+			{
+				CurrentSection = line.substr(1, line.size() - 2);
+				IniData[CurrentSection] = {};
+			}
+			else if (!CurrentSection.empty() && !line.empty())
+			{
+				IniData[CurrentSection].push_back(line);
+			}
+		}
+	}
+
+	return IniData;
+}
+
 void 
 PrintBanner()
 {
-	std::wcout << std::endl;
-	std::wcout << "      ,--,   ,---.    ,---.          ,-.    ,-..-. .-.   .---. " << std::endl;
-	std::wcout << "    .' .'    | .-.\\   | .-'  |\\    /|| |    |(||  \\| |  ( .-._)" << std::endl;
-	std::wcout << "    |  |  __ | `-'/   | `-.  |(\\  / || |    (_)|   | | (_) \\   " << std::endl;
-	std::wcout << "    \\  \\ ( _)|   (    | .-'  (_)\\/  || |    | || |\\  | _  \\ \\  " << std::endl;
-	std::wcout << "     \\  `-) )| |\\ \\   |  `--.| \\  / || `--. | || | |)|( `-'  ) " << std::endl;
-	std::wcout << "     )\\____/ |_| \\)\\  /( __.'| |\\/| ||( __.'`-'/(  (_) `----'  " << std::endl;
-	std::wcout << "    (__)         (__)(__)    '-'  '-'(_)      (__)             " << std::endl;
-	std::wcout << "                                   A Syscall Introspection Tool" << std::endl;
+	std::wcout << "                                                                                " << std::endl;
+	std::wcout << "          (#########(**                                     ,,((((((((((/        " << std::endl;
+	std::wcout << "       ##((((((((((((,,,,,****  *********,,,,,,,,,,  ,,,,.....////////////((     " << std::endl;
+	std::wcout << "     #((((((((((((((((,,,,***&&&&&&&&/***,,,,,,,,,,,,,,,,....////////////////(   " << std::endl;
+	std::wcout << "    #  /((((((((((((((/,,/&&&&&&&&&&&&&&*,,,,,,,,,,,,,,,,,..////////////////  (  " << std::endl;
+	std::wcout << "          (((((((((((((//&&&&&#@.**.##&&&,,,,##.**.@#,,,,,,*/////////////        " << std::endl;
+	std::wcout << "          ((((((((((((((&&&&&#@.*,.*.#&&%(*,,#.*.,*.@#,,,,,//////////////        " << std::endl;
+	std::wcout << "            ((((((((((((&&&&&&&#####&####(((((,(####,,,,,,,////////////          " << std::endl;
+	std::wcout << "              (((((((((((&&&&&&&&&#####/////(((((,,,,,,,,,///////////            " << std::endl;
+	std::wcout << "                          *&&******&#####((((((&,,,,,,,,,                        " << std::endl;
+	std::wcout << "                             *******&&&&&&&&&&&,,,,,,,                           " << std::endl;
+	std::wcout << "                             ***,,,,&&&&&&&&%%%,,,.,,,                           " << std::endl;
+	std::wcout << "                            *******,&&&&&%%%%%%,,,,,,,,                          " << std::endl;
+	std::wcout << "                            &&*,****&&&&&%%%%%%,,,,.,%%                          " << std::endl;
+	std::wcout << "                              &,***&&&&&&%%%%%%%,,,,%                            " << std::endl;
+	std::wcout << "                                       &&&%%                                     " << std::endl;
+	std::wcout << "                            Gremlins: A Syscall Fuzzer" << std::endl;
+	std::wcout << "                                                 " << std::endl;
 	std::wcout << std::endl;
 }
 
@@ -54,12 +112,19 @@ main(
 
 	std::vector<std::string> HookThese{};
 	std::vector<std::string> UnhookThese{};
+	std::vector<std::string> ExcludeTheseDrivers{};
+	std::vector<std::string> AnalyzeImages{};
+
 	INPUT_BUFFER lpInputBuffer{};
 
 	BOOL bIsKdAttached = FALSE;
+	BOOL bIsInitialRun = FALSE;
 
 	PSYSTEM_KERNEL_DEBUGGER_INFORMATION pIsKdAttached = nullptr;
 
+	//
+	// Gizmo!! :D
+	//
 	PrintBanner();
 
 	std::vector<std::string> args(&argv[0], &argv[argc]);
@@ -117,12 +182,52 @@ main(
 				return EXIT_FAILURE;
 			}
 		}
+		else if (argument == "--initial-run" || argument == "-i")
+		{
+			std::map<std::string, std::vector<std::string>> GizmoIniData = ParseIniFile("gremlins.ini");
+
+			//
+			// If this is empty, this means the ini file was not found or there was an error parsing it.
+			//
+			if (GizmoIniData.empty())
+			{
+				std::wcerr << "[!] Failed to parse gremlins.ini. Exiting..." << std::endl;
+				return EXIT_FAILURE;
+			}
+
+			bIsInitialRun = TRUE; 
+
+			for (const auto& section : GizmoIniData)
+			{
+				if (section.first == "exclude_drivers")
+				{
+					for (const auto& data : section.second)
+					{
+						ExcludeTheseDrivers.push_back(data);
+					}
+				}
+				else if (section.first == "analyze_images")
+				{
+					for (const auto& data : section.second)
+					{
+						AnalyzeImages.push_back(data);
+					}
+				}
+				else if (section.first == "hook")
+				{
+					for (const auto& data : section.second)
+					{
+						HookThese.push_back(data);
+					}
+				}
+			}
+		}
 	}
 
 	//
 	// Validate user input.
 	//
-	if (HookThese.empty() && UnhookThese.empty())
+	if (!bIsInitialRun && HookThese.empty() && UnhookThese.empty())
 	{
 		PrintUsage(argv[0]);
 		return EXIT_FAILURE;
@@ -154,26 +259,54 @@ main(
 			system("pause");
 		}
 	} while (!bIsKdAttached);
-	
-	/*
-	//
-	// The kernel debugger should be attached at this point. Start the driver up.
-	// 
-	if (!pGizmo->IsServiceRunning())
+
+	if (bIsInitialRun)
 	{
-		if (!pGizmo->StartKernelService())
+		//
+		// TODO: Fix these and make it cleaner. 
+		//
+
+		if (!ExcludeTheseDrivers.empty())
 		{
-			std::wcerr << "[!] Unable to start service." << std::endl;
-			return EXIT_FAILURE;
+			for (const auto& image : ExcludeTheseDrivers)
+			{
+				std::wcout << image.c_str() << " ";
+				std::wstring DriverName(image.begin(), image.end());
+
+				std::unique_ptr<NtUndoc> pNtUndoc = std::make_unique<NtUndoc>();
+
+				UNICODE_STRING DriverNameUnicode{};
+
+				pNtUndoc->RtlInitUnicodeString(&DriverNameUnicode, DriverName.c_str());
+
+				if (!pGizmo->ExcludeDriverImage(&DriverNameUnicode))
+				{
+					std::wcout << "[!] " << pGizmo->what() << std::endl;
+				}
+			}
+		}
+
+		if (!AnalyzeImages.empty())
+		{
+			std::wcout << "[+] Going to analyze ";
+			for (const auto& image : AnalyzeImages)
+			{
+				std::wcout << image.c_str() << " ";
+				std::wstring DriverName(image.begin(), image.end());
+
+				std::unique_ptr<NtUndoc> pNtUndoc = std::make_unique<NtUndoc>();
+
+				UNICODE_STRING DriverNameUnicode{};
+
+				pNtUndoc->RtlInitUnicodeString(&DriverNameUnicode, DriverName.c_str());
+
+				if (!pGizmo->AnalyzeDriverImage(&DriverNameUnicode))
+				{
+					std::wcout << "[!] " << pGizmo->what() << std::endl;
+				}
+			}
 		}
 	}
-	*/
-
-	//
-	// TODO: Use an INI file to store information on what to monitor and what not to.
-	//
-
-
 
 	if (!HookThese.empty())
 	{

@@ -20,9 +20,9 @@ hook::isFunctionHookedByAddress(
 
 	ExAcquireSpinLock(&g_Globals->kSpinLock, &OldIrql);
 
-	if (!IsListEmpty(&g_Globals->ListHead))
+	if (!IsListEmpty(&g_Globals->HookedListHead))
 	{
-		temp = &g_Globals->ListHead;
+		temp = &g_Globals->HookedListHead;
 
 		do
 		{
@@ -37,7 +37,7 @@ hook::isFunctionHookedByAddress(
 				ExReleaseSpinLock(&g_Globals->kSpinLock, OldIrql);
 				return HookedSyscall->IsHooked;
 			}
-		} while (temp->Flink != &g_Globals->ListHead);
+		} while (temp->Flink != &g_Globals->HookedListHead);
 	}
 
 	ExReleaseSpinLock(&g_Globals->kSpinLock, OldIrql);
@@ -57,9 +57,9 @@ hook::isFunctionHookedByIndex(
 
 	ExAcquireSpinLock(&g_Globals->kSpinLock, &OldIrql);
 
-	if (!IsListEmpty(&g_Globals->ListHead))
+	if (!IsListEmpty(&g_Globals->HookedListHead))
 	{
-		temp = &g_Globals->ListHead;
+		temp = &g_Globals->HookedListHead;
 
 		do
 		{
@@ -74,7 +74,7 @@ hook::isFunctionHookedByIndex(
 				ExReleaseSpinLock(&g_Globals->kSpinLock, OldIrql);
 				return hooked->IsHooked;
 			}
-		} while (temp->Flink != &g_Globals->ListHead);
+		} while (temp->Flink != &g_Globals->HookedListHead);
 	}
 
 	ExReleaseSpinLock(&g_Globals->kSpinLock, OldIrql);
@@ -96,9 +96,9 @@ hook::unhookFunction(
 
 	ExAcquireSpinLock(&g_Globals->kSpinLock, &OldIrql);
 
-	if (!IsListEmpty(&g_Globals->ListHead))
+	if (!IsListEmpty(&g_Globals->HookedListHead))
 	{
-		temp = &g_Globals->ListHead;
+		temp = &g_Globals->HookedListHead;
 
 		do
 		{
@@ -138,7 +138,7 @@ hook::unhookFunction(
 
 				return Status;
 			}
-		} while (temp->Flink != &g_Globals->ListHead);
+		} while (temp->Flink != &g_Globals->HookedListHead);
 	}
 
 	ExReleaseSpinLock(&g_Globals->kSpinLock, OldIrql);
@@ -154,11 +154,16 @@ hook::cleanup()
 	do
 	{
 		pe = ExInterlockedRemoveHeadList(
-			&g_Globals->ListHead,
+			&g_Globals->HookedListHead,
 			&g_Globals->kInterlockedSpinLock
 		);
 
 		hooked = CONTAINING_RECORD(pe, HOOKED_SYSCALLS, entry);
+
+		if (!NT_SUCCESS(unhookFunction(hooked->Index)))
+		{
+			LOG_TRACE("[%ws::%d] Something messed up\n", __FUNCTIONW__, __LINE__);
+		}
 
 		RtlSecureZeroMemory(hooked, sizeof(HOOKED_SYSCALLS));
 
@@ -168,7 +173,7 @@ hook::cleanup()
 		ExFreePoolWithTag(hooked, POOLTAG);
 #endif // DBG
 
-	} while (!IsListEmpty(&g_Globals->ListHead));
+	} while (!IsListEmpty(&g_Globals->HookedListHead));
 }
 
 

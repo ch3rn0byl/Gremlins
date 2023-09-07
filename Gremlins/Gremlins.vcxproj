@@ -189,21 +189,27 @@
     <ClCompile Include="AuxWrapper.cpp" />
     <ClCompile Include="detour.cpp" />
     <ClCompile Include="dispatchfunctions.cpp" />
+    <ClCompile Include="exclusions.cpp" />
     <ClCompile Include="hook.cpp" />
     <ClCompile Include="Leaks.cpp" />
     <ClCompile Include="ntcreatefile.cpp" />
     <ClCompile Include="ntdeviceiocontrolfile.cpp" />
     <ClCompile Include="privileges.cpp" />
+    <ClCompile Include="ProcessCallbacks.cpp" />
     <ClCompile Include="ProcessHandle.cpp" />
     <ClCompile Include="resolve.cpp" />
     <ClCompile Include="Source.cpp" />
+    <ClCompile Include="SpinLocked.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AuxTypes.h" />
     <ClInclude Include="AuxWrapper.h" />
     <ClInclude Include="detour.h" />
     <ClInclude Include="dispatchfunctions.h" />
+    <ClInclude Include="exclusions.h" />
     <ClInclude Include="ntcreatefiletypes.h" />
+    <ClInclude Include="ProcessCallbacks.h" />
+    <ClInclude Include="SpinLocked.h" />
     <ClInclude Include="typesndefs.h" />
     <ClInclude Include="hook.h" />
     <ClInclude Include="kutypes.h" />
