@@ -111,6 +111,7 @@ hook::unhookFunction(
 			// 
 			if (hooked->Index == index && hooked->IsHooked)
 			{
+				LOG_TRACE("[%ws::%d] Unhooking index: %d\n", __FUNCTIONW__, __LINE__, index);
 				Status = detour::unhook(
 					hooked->address,
 					hooked->original,

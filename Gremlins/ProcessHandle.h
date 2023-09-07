@@ -16,6 +16,7 @@ public:
 
 	NTSTATUS AnalyzeHandle();
 	PUNICODE_STRING GetDriverName();
+	PUNICODE_STRING GetDeviceObjectName();
 	PUNICODE_STRING GetFileObjectName();
 	PSECURITY_DESCRIPTOR GetFileObjectSD();
 

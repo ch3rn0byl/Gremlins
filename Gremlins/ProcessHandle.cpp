@@ -141,9 +141,21 @@ PUNICODE_STRING ProcessHandle::GetDriverName()
 	return &m_FileObject->DeviceObject->DriverObject->DriverName;
 }
 
-PUNICODE_STRING ProcessHandle::GetFileObjectName()
+PUNICODE_STRING ProcessHandle::GetDeviceObjectName()
 {
 	return m_NameInformation;
+}
+
+PUNICODE_STRING ProcessHandle::GetFileObjectName()
+{
+	if (m_FileObject->FileName.Length != 0)
+	{
+		return &m_FileObject->FileName;
+	}
+	else
+	{
+		return nullptr;
+	}
 }
 
 PSECURITY_DESCRIPTOR ProcessHandle::GetFileObjectSD()

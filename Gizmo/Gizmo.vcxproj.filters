@@ -36,9 +36,6 @@
     <ClCompile Include="Gizmo.cpp">
       <Filter>Source Files\Classes</Filter>
     </ClCompile>
-    <ClCompile Include="ServiceController.cpp">
-      <Filter>Source Files\Classes</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="types.h">
@@ -48,9 +45,6 @@
       <Filter>Header Files\Classes</Filter>
     </ClInclude>
     <ClInclude Include="ErrorHandler.h">
-      <Filter>Header Files\Classes</Filter>
-    </ClInclude>
-    <ClInclude Include="ServiceController.h">
       <Filter>Header Files\Classes</Filter>
     </ClInclude>
     <ClInclude Include="Gizmo.h">

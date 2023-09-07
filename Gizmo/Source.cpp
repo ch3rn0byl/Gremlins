@@ -27,6 +27,7 @@ PrintUsage(
 	std::wcout << "  -r, --restore\t\tUnhooks a syscall by name." << std::endl;
 	std::wcout << "  -d, --deny\t\tDenies problematic processes from being hooked." << std::endl;
 	std::wcout << "  -i, --initial-run\tSets up information in the kernel based on gremlins.ini." << std::endl;
+	std::wcout << "  -a, --analyze\t\tAnalyzes the kernel for targeted devices." << std::endl;
 
 	std::wcout << "\nThis application will crash (hopefully) the system. A kernel debugger ";
 	std::wcout << "is required to be attached to a system to catch the crash as it occurs. ";
@@ -222,6 +223,23 @@ main(
 				}
 			}
 		}
+		else if (argument == "-a" || argument == "--analyze")
+		{
+			try
+			{
+				for (std::vector<std::string>::const_iterator params = i + 1; params != args.end(); params++)
+				{
+					std::string image = *params;
+
+					AnalyzeImages.push_back(image);
+				}
+			}
+			catch (const std::exception&)
+			{
+				std::wcerr << "[!] Provide a module's function name(s) to hook." << std::endl;
+				return EXIT_FAILURE;
+			}
+		}
 	}
 
 	//
@@ -245,7 +263,7 @@ main(
 		std::wcerr << "[!] " << e.what() << std::endl;
 		return EXIT_FAILURE;
 	}
-	
+
 	//
 	// Ensure the target is attached to a kernel debugger. Pause and wait for it to 
 	// be attached otherwise data that is intended on being displayed will not show.

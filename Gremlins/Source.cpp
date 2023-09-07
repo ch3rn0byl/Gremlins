@@ -60,12 +60,15 @@ DriverDispatchRoutine(
 		Irp->AssociatedIrp.SystemBuffer
 		);
 
+	LOG_TRACE("[%ws::%d] Reached dispatch with IoControlCode: 0x%X\n", __FUNCTIONW__, __LINE__, IoControlCode);
 	switch (IoControlCode)
 	{
 	case IsInitializedIoctl:
+		LOG_TRACE("[%ws::%d] checking if initialize module.\n", __FUNCTIONW__, __LINE__);
 		Status = IsModuleInitialized(InputBuffer, &Information);
 		break;
 	case InitializeIoctl:
+		LOG_TRACE("[%ws::%d] Goign to initialize module.\n", __FUNCTIONW__, __LINE__);
 		Status = InitializeModule();
 		break;
 	case IsHookedIoctl:

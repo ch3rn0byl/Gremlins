@@ -147,7 +147,6 @@
     <ClCompile Include="BaseDriverclient.cpp" />
     <ClCompile Include="ErrorHandler.cpp" />
     <ClCompile Include="Gizmo.cpp" />
-    <ClCompile Include="ServiceController.cpp" />
     <ClCompile Include="Source.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -157,7 +156,6 @@
     <ClInclude Include="Gizmo.h" />
     <ClInclude Include="NtUndocTypes.h" />
     <ClInclude Include="NtUndoc.h" />
-    <ClInclude Include="ServiceController.h" />
     <ClInclude Include="types.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

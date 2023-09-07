@@ -41,12 +41,20 @@ fn_hNtDeviceIoControlFile(
                 goto FinishUp;
             }
 
-            if (exclusions::IsKernelImageForAnalysis(ph.GetFileObjectName()))
+            if (exclusions::IsKernelImageForAnalysis(ph.GetDeviceObjectName()))
             {
                 ExAcquireFastMutex(&g_Globals->fMutex);
 
-                LOG_TRACE("[%ws::%d] \n\n", __FUNCTIONW__, __LINE__);
-                LOG_TRACE("[%ws::%d] Device Name: %wZ\n", __FUNCTIONW__, __LINE__, ph.GetFileObjectName());
+                //LOG_TRACE("[%ws::%d] \n\n", __FUNCTIONW__, __LINE__);
+                LOG_TRACE("[%ws::%d] Device Name: %wZ\n", __FUNCTIONW__, __LINE__, ph.GetDeviceObjectName());
+
+                PUNICODE_STRING FilenameObject = ph.GetFileObjectName();
+                if (FilenameObject != nullptr)
+                {
+                    LOG_TRACE("[%ws::%d] Filename: %wZ\n", __FUNCTIONW__, __LINE__, FilenameObject);
+                }
+
+                /*
                 LOG_TRACE("[%ws::%d] Ioctl: %04x\n", __FUNCTIONW__, __LINE__, IoControlCode);
                 LOG_TRACE("[%ws::%d] InputBuffer: %p\n", __FUNCTIONW__, __LINE__, InputBuffer);
                 LOG_TRACE("[%ws::%d] InputBufferLength: %d\n", __FUNCTIONW__, __LINE__, InputBufferLength);
@@ -61,40 +69,23 @@ fn_hNtDeviceIoControlFile(
                 KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_TRACE_LEVEL, "\n"));
 
                 LOG_TRACE("[%ws::%d] \n\n", __FUNCTIONW__, __LINE__);
-
+                */
                 ExReleaseFastMutex(&g_Globals->fMutex);
-                __debugbreak();
+                //__debugbreak();
 			}
-
-            if (METHOD_FROM_CTL_CODE(IoControlCode) == METHOD_NEITHER)
-            {
-                ExAcquireFastMutex(&g_Globals->fMutex);
-
-                LOG_TRACE("[%ws::%d] \n\n", __FUNCTIONW__, __LINE__);
-                LOG_TRACE("[%ws::%d] Device Name: %wZ\n", __FUNCTIONW__, __LINE__, ph.GetFileObjectName());
-                LOG_TRACE("[%ws::%d] Ioctl: %04x\n", __FUNCTIONW__, __LINE__, IoControlCode);
-                LOG_TRACE("[%ws::%d] InputBuffer: %p\n", __FUNCTIONW__, __LINE__, InputBuffer);
-                LOG_TRACE("[%ws::%d] InputBufferLength: %d\n", __FUNCTIONW__, __LINE__, InputBufferLength);
-                LOG_TRACE("[%ws::%d] OutputBuffer: %p\n", __FUNCTIONW__, __LINE__, OutputBuffer);
-                LOG_TRACE("[%ws::%d] OutputBufferLength: %d\n", __FUNCTIONW__, __LINE__, OutputBufferLength);
-
-                LOG_TRACE("[%ws::%d] Dumping input buffer: ", __FUNCTIONW__, __LINE__);
-                for (ULONG i = 0; i < InputBufferLength; i++)
-                {
-                    LOG_TRACE("%02x ", static_cast<PUINT8>(InputBuffer)[i]);
-                }
-                KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_TRACE_LEVEL, "\n"));
-
-                LOG_TRACE("[%ws::%d] \n\n", __FUNCTIONW__, __LINE__);
-
-                ExReleaseFastMutex(&g_Globals->fMutex);
-            }
 
             /*
             ExAcquireFastMutex(&g_Globals->fMutex);
 
             LOG_TRACE("[%ws::%d] \n\n", __FUNCTIONW__, __LINE__);
-            LOG_TRACE("[%ws::%d] Device Name: %wZ\n", __FUNCTIONW__, __LINE__, ph.GetFileObjectName());
+            LOG_TRACE("[%ws::%d] Device Name: %wZ\n", __FUNCTIONW__, __LINE__, ph.GetDeviceObjectName());
+
+            PUNICODE_STRING FilenameObject = ph.GetFileObjectName();
+            if (FilenameObject != nullptr)
+            {
+                LOG_TRACE("[%ws::%d] Filename: %wZ\n", __FUNCTIONW__, __LINE__, FilenameObject);
+            }
+
             LOG_TRACE("[%ws::%d] Ioctl: %04x\n", __FUNCTIONW__, __LINE__, IoControlCode);
             LOG_TRACE("[%ws::%d] InputBuffer: %p\n", __FUNCTIONW__, __LINE__, InputBuffer);
             LOG_TRACE("[%ws::%d] InputBufferLength: %d\n", __FUNCTIONW__, __LINE__, InputBufferLength);
@@ -171,7 +162,7 @@ fn_hNtDeviceIoControlFile(
         */
     }
 
-
+FinishUp:
     Status = g_Globals->internal.IopXxxControlFile(
         FileHandle,
         Event,
@@ -186,7 +177,6 @@ fn_hNtDeviceIoControlFile(
         TRUE
     );
 
-FinishUp:
     return Status;
 }
 

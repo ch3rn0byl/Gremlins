@@ -10,6 +10,9 @@ IsModuleInitialized(
 	InputBuffer->status = g_Globals->IsInitialized;
 	*Information = sizeof(INPUT_BUFFER);
 
+	LOG_TRACE("[%ws::%d] Here writing status with %d and infromatin with %d\n", __FUNCTIONW__, __LINE__, g_Globals->IsInitialized, sizeof(INPUT_BUFFER));
+	LOG_TRACE("[%ws::%d] InputBuffer->status is %d and *Information is %d\n", __FUNCTIONW__, __LINE__, InputBuffer->status, *Information);
+
 	return STATUS_SUCCESS;
 }
 
