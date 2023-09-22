@@ -10,6 +10,7 @@
 
 #include "Gizmo.h"
 #include "NtUndoc.h"
+#include "ArgumentParser.h"
 
 void
 PrintUsage(
@@ -106,7 +107,7 @@ PrintBanner()
 int
 main(
 	int argc,
-	const char* argv[]
+	char* argv[]
 )
 {
 	std::unique_ptr<Gizmo> pGizmo = nullptr;
@@ -128,6 +129,69 @@ main(
 	//
 	PrintBanner();
 
+	ArgumentParser parser(argc, argv);
+
+	
+	/*
+	ArgumentParser parser(argc, argv);
+
+	if (argc == 1)
+	{
+		PrintUsage(argv[0]);
+		return EXIT_SUCCESS;
+	}
+
+	if (parser.Contains("-h") || parser.Contains("--hook"))
+	{
+		std::wcout << "hooking: ";
+		auto values = parser.Get("-h");
+		for (const auto& value : values)
+		{
+			std::wcout << value.c_str() << std::endl;
+		}
+		std::wcout << std::endl;
+	}
+
+	if (parser.Contains("-r") || parser.Contains("--restore"))
+	{
+		std::wcout << "restoring: ";
+		auto values = parser.Get("-r");
+		for (const auto& value : values)
+		{
+			std::wcout << value.c_str() << std::endl;
+		}
+		std::wcout << std::endl;
+	}
+
+	if (parser.Contains("-e") || parser.Contains("--exclude"))
+	{
+		std::wcout << "excluding: ";
+		auto values = parser.Get("-e");
+		for (const auto& value : values)
+		{
+			std::wcout << value.c_str() << std::endl;
+		}
+		std::wcout << std::endl;
+	}
+
+	if (parser.Contains("-a") || parser.Contains("--analyze"))
+	{
+		std::wcout << "analyzing: ";
+		auto values = parser.Get("-a");
+		for (const auto& value : values)
+		{
+			std::wcout << value.c_str() << std::endl;
+		}
+		std::wcout << std::endl;
+	}
+
+	if (parser.Contains("-i") || parser.Contains("--input-run"))
+	{
+		std::wcout << "initial run" << std::endl;
+	}
+	*/
+
+	/*
 	std::vector<std::string> args(&argv[0], &argv[argc]);
 
 	//
@@ -241,15 +305,50 @@ main(
 			}
 		}
 	}
+	*/
+
+	/*
+	bIsInitialRun = parser.isFlagSet("--initial-run");
+
+	auto hooks = parser.getFlagArguments("--hook");
+	for (const auto& hook : hooks)
+	{
+		std::wcout << "[+] Going to hook " << hook.c_str() << std::endl;
+		HookThese.push_back(hook);
+	}
+
+	auto restores = parser.getFlagArguments("--restore");
+	for (const auto& restore : restores)
+	{
+		std::wcout << "[+] Going to unhook " << restore.c_str() << std::endl;
+		UnhookThese.push_back(restore);
+	}
+
+	auto denies = parser.getFlagArguments("--deny");
+	for (const auto& deny : denies)
+	{
+		std::wcout << "[+] Going to deny " << deny.c_str() << std::endl;
+		ExcludeTheseDrivers.push_back(deny);
+	}
+
+	auto analyzes = parser.getFlagArguments("--analyze");
+	for (const auto& analyze : analyzes)
+	{
+		std::wcout << "[+] Going to analyze " << analyze.c_str() << std::endl;
+		AnalyzeImages.push_back(analyze);
+	}
+	*/
 
 	//
 	// Validate user input.
 	//
+/*
 	if (!bIsInitialRun && HookThese.empty() && UnhookThese.empty())
 	{
 		PrintUsage(argv[0]);
 		return EXIT_FAILURE;
 	}
+	*/
 
 	//
 	// Now start initializing and interacting with Gremlins.
@@ -278,14 +377,77 @@ main(
 		}
 	} while (!bIsKdAttached);
 
-	if (bIsInitialRun)
+	auto hooks = parser.getFlagArguments("--hook");
+	for (const auto& hook : hooks)
 	{
+		HookThese.push_back(hook);
+	}
+
+	auto restores = parser.getFlagArguments("--restore");
+	for (const auto& restore : restores)
+	{
+		UnhookThese.push_back(restore);
+	}
+
+	auto denies = parser.getFlagArguments("--deny");
+	for (const auto& deny : denies)
+	{
+		ExcludeTheseDrivers.push_back(deny);
+	}
+
+	auto args = parser.getFlagArguments("--analyze");
+	for (const auto& arg : args)
+	{
+		AnalyzeImages.push_back(arg);
+	}
+
+
+	//if (bIsInitialRun)
+	if (parser.isFlagSet("--initial-run"))
+	{
+		std::map<std::string, std::vector<std::string>> GizmoIniData = ParseIniFile("gremlins.ini");
+
+		//
+		// If this is empty, this means the ini file was not found or there was an error parsing it.
+		//
+		if (GizmoIniData.empty())
+		{
+			std::wcerr << "[!] Failed to parse gremlins.ini. Exiting..." << std::endl;
+			return EXIT_FAILURE;
+		}
+
+		for (const auto& section : GizmoIniData)
+		{
+			if (section.first == "exclude_drivers")
+			{
+				for (const auto& data : section.second)
+				{
+					ExcludeTheseDrivers.push_back(data);
+				}
+			}
+			else if (section.first == "analyze_images")
+			{
+				for (const auto& data : section.second)
+				{
+					AnalyzeImages.push_back(data);
+				}
+			}
+			else if (section.first == "hook")
+			{
+				for (const auto& data : section.second)
+				{
+					HookThese.push_back(data);
+				}
+			}
+		}
+
 		//
 		// TODO: Fix these and make it cleaner. 
 		//
-
+		std::wcout << "[+] Setting up environment." << std::endl;
 		if (!ExcludeTheseDrivers.empty())
 		{
+			std::wcout << "[+] Going to exclude ";
 			for (const auto& image : ExcludeTheseDrivers)
 			{
 				std::wcout << image.c_str() << " ";

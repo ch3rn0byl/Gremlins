@@ -2,6 +2,7 @@
 #include "typesndefs.h"
 #include "dispatchfunctions.h"
 #include "AuxWrapper.h"
+#include "ProcessCallbacks.h"
 
 UNICODE_STRING g_DeviceName = RTL_CONSTANT_STRING(L"\\Device\\Gremlins");
 UNICODE_STRING g_SymbolicName = RTL_CONSTANT_STRING(L"\\??\\Gremlins");
@@ -60,15 +61,12 @@ DriverDispatchRoutine(
 		Irp->AssociatedIrp.SystemBuffer
 		);
 
-	LOG_TRACE("[%ws::%d] Reached dispatch with IoControlCode: 0x%X\n", __FUNCTIONW__, __LINE__, IoControlCode);
 	switch (IoControlCode)
 	{
 	case IsInitializedIoctl:
-		LOG_TRACE("[%ws::%d] checking if initialize module.\n", __FUNCTIONW__, __LINE__);
 		Status = IsModuleInitialized(InputBuffer, &Information);
 		break;
 	case InitializeIoctl:
-		LOG_TRACE("[%ws::%d] Goign to initialize module.\n", __FUNCTIONW__, __LINE__);
 		Status = InitializeModule();
 		break;
 	case IsHookedIoctl:
@@ -124,6 +122,10 @@ DriverUnload(
 )
 {
 	//
+	// Unregister the process callback.
+	//
+	PsSetCreateProcessNotifyRoutine(PCreateProcessNotifyRoutine, TRUE);
+
 	// Iterate through all the linked lists and free the memory.
 	//
 	//hook::cleanup();
@@ -198,7 +200,14 @@ DriverEntry(
 	InitializeListHead(&g_Globals->AnalyzeKernelImageListHead);
 
 	// TODO: Register a process callback to detect processes that contain "gremlins" or if the process is blacklisted.
-	//Status = PsSetCreateProcessNotifyRoutine()
+	Status = PsSetCreateProcessNotifyRoutine(PCreateProcessNotifyRoutine, FALSE);
+	if (!NT_SUCCESS(Status))
+	{
+		LOG_ERR("[%ws::%d] Failed with 0x%08x.\n", __FUNCTIONW__, __LINE__, Status);
+		return Status;
+	}
+
+	// TODO: Register a process callback to detect processes that contain "gremlins" or if the process is blacklisted EOF
 
 	Status = IoCreateDevice(
 		DriverObject,

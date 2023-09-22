@@ -10,9 +10,6 @@ IsModuleInitialized(
 	InputBuffer->status = g_Globals->IsInitialized;
 	*Information = sizeof(INPUT_BUFFER);
 
-	LOG_TRACE("[%ws::%d] Here writing status with %d and infromatin with %d\n", __FUNCTIONW__, __LINE__, g_Globals->IsInitialized, sizeof(INPUT_BUFFER));
-	LOG_TRACE("[%ws::%d] InputBuffer->status is %d and *Information is %d\n", __FUNCTIONW__, __LINE__, InputBuffer->status, *Information);
-
 	return STATUS_SUCCESS;
 }
 
@@ -115,6 +112,85 @@ HookSyscall(
 
 	switch (InputBuffer->syscall)
 	{
+	case NtCreateFile:
+		if (!hook::isFunctionHookedByAddress(reinterpret_cast<PVOID>(fnSyscall)))
+		{
+			g_Globals->hooked = static_cast<PHOOKED_SYSCALLS>(
+#ifdef DBG
+				ExAllocatePool2(POOL_FLAG_NON_PAGED | POOL_FLAG_SPECIAL_POOL, sizeof(GLOBALS), POOLTAG_DBG)
+#else
+				ExAllocatePool2(POOL_FLAG_NON_PAGED, sizeof(GLOBALS), POOLTAG)
+#endif // DBG
+				);
+			if (g_Globals->hooked == NULL)
+			{
+				Status = STATUS_MEMORY_NOT_ALLOCATED;
+				LOG_ERR("[%ws::%d] Failed with status 0x%08x.\n", __FUNCTIONW__, __LINE__, Status);
+				break;
+			}
+
+			LOG_TRACE("[%ws::%d] g_Globals->hooked allocated at %p.\n", __FUNCTIONW__, __LINE__, g_Globals->hooked);
+
+			//
+			// Save the original address of the NT function.
+			//
+			g_Globals->hooked->address = reinterpret_cast<PVOID>(fnSyscall);
+			g_Globals->hooked->Index = InputBuffer->syscall;
+
+			//
+			// NtCreateFile has an internal function it hits. Will need to resolve IopCreateFile. 
+			//
+			Status = resolve::IopCreateFile(
+				reinterpret_cast<UINT64>(g_Globals->hooked->address),
+				reinterpret_cast<PUINT64>(&g_Globals->internal.IopCreateFile)
+			);
+			if (!NT_SUCCESS(Status) || g_Globals->internal.IopCreateFile == NULL)
+			{
+				LOG_ERR("[%ws::%d] %p was not found.\n", __FUNCTIONW__, __LINE__, g_Globals->internal.IopCreateFile);
+				Status = STATUS_NOT_FOUND;
+				break;
+			}
+
+			fn_hSyscall = reinterpret_cast<UINT64>(fn_hNtCreateFile);
+
+			//
+			// Copy enough memory of the function to restore afterwards. 
+			//
+			RtlCopyMemory(
+				g_Globals->hooked->original,
+				g_Globals->hooked->address,
+				sizeof(g_Globals->hooked->original)
+			);
+
+			//
+			// Patch the temp bytes that way RAX points to something useful.
+			// 
+			RtlCopyMemory(HookingStub + 2, &fn_hSyscall, sizeof(fn_hSyscall));
+
+			Status = detour::hook(reinterpret_cast<PVOID>(fnSyscall), HookingStub, sizeof(HookingStub));
+			if (!NT_SUCCESS(Status))
+			{
+				LOG_ERR("[%ws::%d] Failed with status 0x%08x.\n", __FUNCTIONW__, __LINE__, Status);
+				break;
+			}
+			else
+			{
+				g_Globals->hooked->IsHooked = true;
+			}
+
+			//
+			// Keep track of the functions that are hooked. Insert dem hoes into
+			// the list entry. 
+			// 
+			ExInterlockedInsertTailList(
+				&g_Globals->HookedListHead,
+				&g_Globals->hooked->entry,
+				&g_Globals->kInterlockedSpinLock
+			);
+
+			LOG_TRACE("[%ws::%d] NtCreateFile has been hooked.\n", __FUNCTIONW__, __LINE__);
+		}
+		break;
 	case NtDeviceIoControlFile:
 		//
 		// Check to make sure the function is not already hooked by querying 

@@ -193,6 +193,7 @@
     <ClCompile Include="hook.cpp" />
     <ClCompile Include="Leaks.cpp" />
     <ClCompile Include="ntcreatefile.cpp" />
+    <ClCompile Include="ntcreatetransactionmanager.cpp" />
     <ClCompile Include="ntdeviceiocontrolfile.cpp" />
     <ClCompile Include="privileges.cpp" />
     <ClCompile Include="ProcessCallbacks.cpp" />
@@ -208,6 +209,7 @@
     <ClInclude Include="dispatchfunctions.h" />
     <ClInclude Include="exclusions.h" />
     <ClInclude Include="ntcreatefiletypes.h" />
+    <ClInclude Include="ntcreatetransactionmanager.h" />
     <ClInclude Include="ProcessCallbacks.h" />
     <ClInclude Include="SpinLocked.h" />
     <ClInclude Include="typesndefs.h" />

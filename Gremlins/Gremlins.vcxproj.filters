@@ -99,6 +99,9 @@
     <ClCompile Include="exclusions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ntcreatetransactionmanager.cpp">
+      <Filter>Source Files\Hooks\Syscall Hooks</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="detour.h">
@@ -157,6 +160,9 @@
     </ClInclude>
     <ClInclude Include="exclusions.h">
       <Filter>Header Files\Namespaces</Filter>
+    </ClInclude>
+    <ClInclude Include="ntcreatetransactionmanager.h">
+      <Filter>Header Files\Hooks</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -6,6 +6,7 @@
 #include "hook.h"
 #include "exclusions.h"
 #include "ntdeviceiocontrolfile.h"
+#include "ntcreatefile.h"
 
 NTSTATUS
 IsModuleInitialized(

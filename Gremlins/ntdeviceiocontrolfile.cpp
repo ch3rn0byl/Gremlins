@@ -36,7 +36,8 @@ fn_hNtDeviceIoControlFile(
         hStatus = ph.AnalyzeHandle();
         if (NT_SUCCESS(hStatus))
         {
-            if (exclusions::IsKernelImageExcluded(ph.GetDriverName()))
+            //if (exclusions::IsKernelImageExcluded(ph.GetDriverName()))
+            if (exclusions::IsKernelImageExcluded(ph.GetDeviceObjectName()))
             {
                 goto FinishUp;
             }
@@ -54,7 +55,6 @@ fn_hNtDeviceIoControlFile(
                     LOG_TRACE("[%ws::%d] Filename: %wZ\n", __FUNCTIONW__, __LINE__, FilenameObject);
                 }
 
-                /*
                 LOG_TRACE("[%ws::%d] Ioctl: %04x\n", __FUNCTIONW__, __LINE__, IoControlCode);
                 LOG_TRACE("[%ws::%d] InputBuffer: %p\n", __FUNCTIONW__, __LINE__, InputBuffer);
                 LOG_TRACE("[%ws::%d] InputBufferLength: %d\n", __FUNCTIONW__, __LINE__, InputBufferLength);
@@ -69,15 +69,13 @@ fn_hNtDeviceIoControlFile(
                 KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_TRACE_LEVEL, "\n"));
 
                 LOG_TRACE("[%ws::%d] \n\n", __FUNCTIONW__, __LINE__);
-                */
-                ExReleaseFastMutex(&g_Globals->fMutex);
-                //__debugbreak();
-			}
 
-            /*
+                ExReleaseFastMutex(&g_Globals->fMutex);
+			}
+            
             ExAcquireFastMutex(&g_Globals->fMutex);
 
-            LOG_TRACE("[%ws::%d] \n\n", __FUNCTIONW__, __LINE__);
+            LOG_TRACE("[%ws::%d] \n", __FUNCTIONW__, __LINE__);
             LOG_TRACE("[%ws::%d] Device Name: %wZ\n", __FUNCTIONW__, __LINE__, ph.GetDeviceObjectName());
 
             PUNICODE_STRING FilenameObject = ph.GetFileObjectName();
@@ -99,11 +97,9 @@ fn_hNtDeviceIoControlFile(
             }
             KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_TRACE_LEVEL, "\n"));
 
-            LOG_TRACE("[%ws::%d] \n\n", __FUNCTIONW__, __LINE__);
+            LOG_TRACE("[%ws::%d] \n", __FUNCTIONW__, __LINE__);
 
             ExReleaseFastMutex(&g_Globals->fMutex);
-            */
-
         }
         /*
         //

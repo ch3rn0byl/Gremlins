@@ -36,6 +36,9 @@
     <ClCompile Include="Gizmo.cpp">
       <Filter>Source Files\Classes</Filter>
     </ClCompile>
+    <ClCompile Include="ArgumentParser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="types.h">
@@ -58,6 +61,9 @@
     </ClInclude>
     <ClInclude Include="NtUndocTypes.h">
       <Filter>Header Files\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="ArgumentParser.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

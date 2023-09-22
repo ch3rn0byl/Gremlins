@@ -120,6 +120,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -144,12 +145,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ArgumentParser.cpp" />
     <ClCompile Include="BaseDriverclient.cpp" />
     <ClCompile Include="ErrorHandler.cpp" />
     <ClCompile Include="Gizmo.cpp" />
     <ClCompile Include="Source.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ArgumentParser.h" />
     <ClInclude Include="BaseDriverclient.h" />
     <ClInclude Include="DllHelper.h" />
     <ClInclude Include="ErrorHandler.h" />
